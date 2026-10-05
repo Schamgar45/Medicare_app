@@ -1,0 +1,43 @@
+# --- Python / Django (backend) ---
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node / Vite (frontend) ---
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# --- Variables d'environnement (ne JAMAIS commiter) ---
+.env
+.env.local
+.env.*.local
+
+# --- Bases de données locales ---
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+
+# --- Editeurs / OS ---
+# .vscode/ est volontairement SUIVI (settings.json partage l'interpreteur backend/.venv).
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs / temporaires ---
+*.log
+npm-debug.log*
+yarn-error.log*
+__testfixtures__/
+coverage/

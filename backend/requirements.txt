@@ -1,0 +1,21 @@
+# MediCare Connect API - dependances Python
+# Versions epinglees sur l'environnement de developpement (Python 3.12).
+# Installer avec :  python -m pip install -r requirements.txt
+
+# Framework + API REST
+Django==6.1.1
+djangorestframework==3.18.1
+django-filter==26.2
+django-cors-headers==4.9.0
+
+# Auth JWT (login par email, blacklist, refresh)
+djangorestframework-simplejwt==5.5.1
+
+# Schema OpenAPI / Swagger UI (/api/schema/, /api/docs/)
+drf-spectacular==0.30.0
+
+# Variables d'environnement (.env)
+python-dotenv==1.2.4
+
+# Pilote PostgreSQL (requis uniquement si USE_POSTGRES=true)
+psycopg[binary]==3.3.6

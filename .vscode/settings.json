@@ -1,0 +1,37 @@
+{
+    // Interpreteur Python du backend : le venv vit dans backend/.venv
+    "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+    "python.terminal.activateEnvironment": true,
+
+    // Ne pas analyser les fichiers Python hors backend (le venv racine a ete supprime)
+    "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
+
+    // terminal par defaut dans le terminal integre
+    "python.defaultInterpreterPath.manual": true,
+
+    // ESLint / Prettier cote front
+    "editor.formatOnSave": false,
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "eslint.workingDirectories": ["${workspaceFolder}/frontend"],
+    "eslint.validate": ["typescript", "typescriptreact"],
+
+    // Fichiers exclus de l'explorateur
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/.venv": true,
+        "**/db.sqlite3": true
+    }
+}

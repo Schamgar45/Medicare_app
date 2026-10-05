@@ -1,0 +1,58 @@
+from django.db import models
+from django.contrib.auth.models import AbstractUser, UserManager as DjangoUserManager
+
+
+class UserManager(DjangoUserManager):
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        # Un superuser est toujours un ADMIN (le champ role n'a pas de valeur par défaut).
+        extra_fields.setdefault("role", "ADMIN")
+        return super().create_superuser(username, email, password, **extra_fields)
+
+
+class User(AbstractUser):
+
+    objects = UserManager()
+
+    class Role(models.TextChoices):
+        ADMIN = "ADMIN", "Admin"
+        DOCTOR = "DOCTOR", "Doctor"
+        RECEPTIONIST = "RECEPTIONIST", "Receptionist"
+        LABORANT = "LABORANT", "Laborant"
+        PHARMACIST = "PHARMACIST", "Pharmacist"
+        CASHIER = "CASHIER", "Cashier"
+
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Active"
+        INACTIVE = "INACTIVE", "Inactive"
+        SUSPENDED = "SUSPENDED", "Suspended"
+
+    class Gender(models.TextChoices):
+        MASCULIN = "MASCULIN", "Masculin"
+        FEMININ = "FEMININ", "Féminin"
+
+    phone = models.CharField(max_length=30, blank=True)
+
+    gender = models.CharField(
+        max_length=20,
+        choices=Gender.choices,
+        default=Gender.MASCULIN,
+        blank=True,
+    )
+
+    role = models.CharField(
+        max_length=20,
+        choices=Role.choices,
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+
+    email = models.EmailField(unique=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    failed_login_attempts = models.IntegerField(default=0)
+    lockout_until = models.DateTimeField(null=True, blank=True)
