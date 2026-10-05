@@ -80,7 +80,7 @@ Ces éléments sont fonctionnels mais à traiter avant une mise en production :
 1. `/api/docs/` et `/api/schema/` sont **publics** (à restreindre).
 2. Le modèle `AuditLog` existe mais **aucun code n'y écrit** encore.
 3. `current_stock` additionne tous les lots, y compris périmés.
-4. `npm audit` remonte 9 vulnérabilités transitives (via `tailwindcss`, `vite`, `react-router`).
-   Toutes exigent un changement de version majeure ; voir `frontend/README.md`.
+4. `npm audit` : **0 vulnérabilité** (après migration `vite` 5→8, `tailwindcss` 3→4,
+   `react-router-dom` 6→7). Les détails de ces migrations sont dans `frontend/README.md`.
 5. Les factures et mouvements de stock ne sont pas générés automatiquement depuis une
    consultation ou une ordonnance.

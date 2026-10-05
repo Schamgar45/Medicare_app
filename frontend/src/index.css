@@ -1,7 +1,52 @@
-@import '@fontsource-variable/inter';
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+﻿@import '@fontsource-variable/inter';
+@import 'tailwindcss';
+
+/* Tailwind 4 : le thème se déclare en CSS (`@theme`), plus de tailwind.config.js.
+   `inline` est indispensable ici : les couleurs référencent des variables CSS
+   redéfinies à l'exécution par [data-theme='dark'].
+   Pas de `<alpha-value>` (convention v3) : en v4 les modificateurs d'opacité
+   (/20, /50) passent par color-mix(), qui fonctionne avec ces variables. */
+@theme inline {
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
+
+  --color-bg: rgb(var(--bg));
+  --color-surface: rgb(var(--surface));
+  --color-sunken: rgb(var(--sunken));
+  --color-line: rgb(var(--line));
+  --color-ink: rgb(var(--ink));
+  --color-sub: rgb(var(--sub));
+  --color-mute: rgb(var(--mute));
+  --color-brand: rgb(var(--brand));
+  --color-brand-ink: rgb(var(--brand-ink));
+  --color-accent: rgb(var(--accent));
+  --color-ok: rgb(var(--ok));
+  --color-warn: rgb(var(--warn));
+  --color-bad: rgb(var(--bad));
+
+  --shadow-card: 0 1px 2px rgb(var(--shadow) / 0.06), 0 8px 24px -12px rgb(var(--shadow) / 0.12);
+
+  --animate-shimmer: shimmer 1.4s infinite;
+  --animate-rise: rise 0.25s ease-out both;
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* Le thème sombre passe par data-theme (voir theme.tsx et le script inline de index.html). */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 :root,
 [data-theme='light'] {

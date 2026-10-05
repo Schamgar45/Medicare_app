@@ -25,9 +25,20 @@ npm run format:check  # Prettier --check
 ## Dépendances
 
 - `package-lock.json` fait foi : utiliser `npm ci` et non `npm install` pour reproduire l'environnement.
-- **9 vulnérabilités transitives** sont connues (`npm audit`) et ne sont **pas** corrigées : chacune
-  exige une version majeure — `tailwindcss` 3→4, `vite` 5→8, `react-router-dom` 6→7. Ces migrations
-  sont à planifier séparément ; ne pas lancer `npm audit fix --force` sans migrer le code front.
+- `npm audit` : **0 vulnérabilité**.
+
+### Versions et particularités
+
+| Paquet              | Version | Note                                                                                                                                                   |
+| ------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `vite`              | 8.x     | Bundler **Rolldown**. `rollupOptions.output.manualChunks` n'existe plus : le découpage se déclare via `advancedChunks.groups` (voir `vite.config.ts`). |
+| `@tailwindcss/vite` | 4.x     | Remplace `postcss.config.js` + `autoprefixer` (supprimés).                                                                                             |
+| `tailwindcss`       | 4.x     | **Plus de `tailwind.config.js`** : le thème est déclaré en CSS dans `src/index.css` via `@theme`.                                                      |
+| `react-router-dom`  | 7.x     | Les API déclaratives (`BrowserRouter`, `Routes`, `useNavigate`…) sont inchangées.                                                                      |
+
+⚠️ En Tailwind 4, `<alpha-value>` n'existe plus : les couleurs de `@theme` s'écrivent
+`rgb(var(--ma-couleur))` et les modificateurs d'opacité (`/20`) passent par `color-mix()`.
+Les variables de thème restent définies en `:root` et `[data-theme='dark']`.
 
 ## Structure
 

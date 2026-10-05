@@ -1,0 +1,19 @@
+# Normalisation des fins de ligne : LF dans le depot, CRLF au checkout sur Windows.
+* text=auto eol=lf
+
+# Fichiers Windows qui doivent rester en CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Fichiers binaires (jamais de conversion)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.sqlite3 binary
