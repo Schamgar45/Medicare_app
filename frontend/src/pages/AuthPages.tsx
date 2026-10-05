@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, Moon, Sun } from 'lucide-react';
+import {
+  Clock3,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  LogIn,
+  Moon,
+  ShieldCheck,
+  Sun,
+  UsersRound,
+} from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
 import { api, apiError } from '@/lib/api';
@@ -18,43 +28,85 @@ function Shell({
 }) {
   const { theme, toggle } = useTheme();
   return (
-    <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
-      <div className="relative hidden overflow-hidden bg-[#0C3C7A] p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[#2FA45B]/25 blur-3xl" />
-        <div className="absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-[#1B6DC1]/50 blur-3xl" />
-        <div className="relative flex items-center gap-3">
-          <img src="/brand/logo.png" className="h-12 w-12 rounded-full bg-white" alt="" />
-          <span className="text-lg font-extrabold">{CENTER.name}</span>
+    <div className="auth-shell">
+      <section className="auth-visual" aria-label={CENTER.name}>
+        <div className="auth-brand">
+          <img src="/brand/logo.png" className="h-14 w-14 object-contain" alt="" />
+          <div>
+            <div className="auth-brand-name">
+              Medicare <span>Hospital</span>
+            </div>
+            <p>“Votre santé, notre priorité”</p>
+          </div>
         </div>
-        <div className="relative">
-          <h2 className="text-4xl font-extrabold leading-tight">{CENTER.slogan}</h2>
-          <p className="mt-4 max-w-md text-white/75">
-            Dossiers patients, rendez-vous, laboratoire, pharmacie et facturation réunis dans un
-            même outil.
+        <div className="auth-hero-copy">
+          <h2>
+            Votre santé,
+            <br />
+            <span>notre priorité</span>
+          </h2>
+          <p>
+            Un accès sécurisé à votre espace de travail pour une meilleure gestion de nos services
+            hospitaliers.
           </p>
+          <div className="auth-benefits">
+            <div>
+              <ShieldCheck />
+              <strong>Accès sécurisé</strong>
+              <span>
+                Vos données
+                <br />
+                sont protégées
+              </span>
+            </div>
+            <div>
+              <Clock3 />
+              <strong>Suivi en temps réel</strong>
+              <span>
+                Une gestion efficace
+                <br />
+                de vos opérations
+              </span>
+            </div>
+            <div>
+              <UsersRound />
+              <strong>Une équipe engagée</strong>
+              <span>Pour votre bien-être</span>
+            </div>
+          </div>
         </div>
-        <p className="relative text-xs text-white/60">
-          {CENTER.address} · {CENTER.phone}
+        <p className="auth-contact">
+          {CENTER.address} <span>·</span> {CENTER.phone}
         </p>
-      </div>
-      <div className="relative flex items-center justify-center p-6">
+      </section>
+      <main className="auth-panel">
         <button
-          className="absolute right-4 top-4 rounded-lg p-2 text-sub hover:bg-sunken"
+          className="auth-theme-toggle"
           onClick={toggle}
           aria-label="Changer de thème"
+          title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
         >
-          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          {theme === 'dark' ? <Sun /> : <Moon />}
+          <span>{theme === 'dark' ? 'Mode clair' : 'Mode sombre'}</span>
         </button>
-        <div className="w-full max-w-sm animate-rise">
-          <img src="/brand/logo.png" alt="" className="mb-6 h-16 w-16 rounded-full lg:hidden" />
-          <h1 className="text-2xl font-extrabold tracking-tight">{title}</h1>
-          <p className="mb-6 mt-1 text-sm text-sub">{subtitle}</p>
+        <div className="auth-card animate-rise">
+          <div className="auth-mobile-brand">
+            <img src="/brand/logo.png" alt="" />
+            <span>
+              Medicare <b>Hospital</b>
+            </span>
+          </div>
+          <div className="auth-secure">
+            <LockKeyhole /> Connexion sécurisée
+          </div>
+          <h1>{title}</h1>
+          <p className="auth-subtitle">{subtitle}</p>
           {children}
-          <p className="mt-10 text-center text-xs text-mute">
+          <p className="auth-version">
             {CENTER.name} · Version {APP_VERSION}
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -66,19 +118,20 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   if (user) return <Navigate to={loc.state?.from || '/'} replace />;
   return (
     <Shell title="Connexion" subtitle="Accédez à votre espace de travail.">
       <form
-        className="space-y-4"
+        className="auth-form"
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
           setError('');
           try {
-            await login(email.trim(), password);
+            await login(email.trim(), password, remember);
             nav(loc.state?.from || '/', { replace: true });
           } catch (err) {
             const r = (err as any).response;
@@ -94,29 +147,33 @@ export function LoginPage() {
       >
         <Field label="Email">
           <input
-            className="input"
+            className="input auth-input"
             type="email"
             autoComplete="username"
             required
+            placeholder="exemple@domaine.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            aria-label="Email"
           />
         </Field>
         <Field label="Mot de passe">
           <div className="relative">
             <input
-              className="input pr-10"
+              className="input auth-input pr-11"
               type={show ? 'text' : 'password'}
               autoComplete="current-password"
               required
+              placeholder="Votre mot de passe"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              aria-label="Mot de passe"
             />
             <button
               type="button"
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-mute"
               onClick={() => setShow(!show)}
-              aria-label="Afficher le mot de passe"
+              aria-label={show ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
             >
               {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -127,14 +184,39 @@ export function LoginPage() {
             {error}
           </p>
         )}
-        <button className="btn btn-primary w-full" disabled={busy}>
-          {busy && <Spinner />}Se connecter
-        </button>
-        <div className="text-center">
+        <div className="auth-options">
+          <label>
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+            />{' '}
+            Se souvenir de moi
+          </label>
           <Link to="/forgot" className="text-sm font-medium text-brand hover:underline">
             Mot de passe oublié ?
           </Link>
         </div>
+        <button className="btn btn-primary auth-submit" disabled={busy}>
+          {busy ? <Spinner /> : <LogIn />}Se connecter
+        </button>
+        <div className="auth-divider">
+          <span>Ou</span>
+        </div>
+        <button
+          className="auth-microsoft"
+          type="button"
+          disabled
+          title="Connexion Microsoft non configurée"
+        >
+          <span className="microsoft-mark" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+          Connexion avec Microsoft
+        </button>
       </form>
     </Shell>
   );

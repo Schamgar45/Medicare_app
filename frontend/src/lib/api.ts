@@ -11,14 +11,19 @@ export interface Tokens {
 export const tokenStore = {
   get(): Tokens | null {
     try {
-      return JSON.parse(localStorage.getItem(KEY) || 'null');
+      return JSON.parse(localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || 'null');
     } catch {
       return null;
     }
   },
-  set(t: Tokens) {
+  set(t: Tokens, remember?: boolean) {
+    let persist = remember;
     try {
-      localStorage.setItem(KEY, JSON.stringify(t));
+      if (persist === undefined) persist = !sessionStorage.getItem(KEY);
+      const storage = persist ? localStorage : sessionStorage;
+      const otherStorage = persist ? sessionStorage : localStorage;
+      storage.setItem(KEY, JSON.stringify(t));
+      otherStorage.removeItem(KEY);
     } catch {
       /* stockage indisponible */
     }
@@ -26,6 +31,7 @@ export const tokenStore = {
   clear() {
     try {
       localStorage.removeItem(KEY);
+      sessionStorage.removeItem(KEY);
     } catch {
       /* ignore */
     }

@@ -15,7 +15,7 @@ interface AuthState {
   user: User | null;
   doctor: Doctor | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, remember?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   can: (...roles: Role[]) => boolean;
 }
@@ -59,9 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [qc]);
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, remember = true) => {
       const r = await api.post('/auth/login/', { email, password });
-      tokenStore.set({ access: r.data.access, refresh: r.data.refresh });
+      tokenStore.set({ access: r.data.access, refresh: r.data.refresh }, remember);
       setUser(r.data.user);
       await loadDoctor(r.data.user);
     },
