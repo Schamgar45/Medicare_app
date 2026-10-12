@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
 from users.roles import CASHIER, RECEPTIONIST
@@ -62,6 +63,22 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        # Payment.invoice est en RESTRICT : supprimer une facture payée exploserait
+        # en 500 (RestrictedError). On refuse proprement ; l'annulation se fait
+        # via le statut CANCELLED.
+        if instance.payments.exists():
+            raise ValidationError(
+                {
+                    "detail": (
+                        "Impossible de supprimer une facture qui a des paiements. "
+                        "Utilisez plutôt le statut « Annulée »."
+                    )
+                }
+            )
+        instance.delete()
 
 
 class InvoiceItemViewSet(viewsets.ModelViewSet):

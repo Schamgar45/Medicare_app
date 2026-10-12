@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: MediCare Connect API
-  version: 1.0.0
+  version: 1.2.0
   description: API REST de gestion d'un centre médical (Django REST Framework).
   contact:
     name: API Support
@@ -7404,13 +7404,10 @@ components:
           minLength: 1
           maxLength: 100
         gender:
-          oneOf:
-          - $ref: '#/components/schemas/PatientGenderEnum'
-          - $ref: '#/components/schemas/BlankEnum'
+          $ref: '#/components/schemas/PatientGenderEnum'
         date_of_birth:
           type: string
           format: date
-          nullable: true
         phone:
           type: string
           maxLength: 30
@@ -7440,7 +7437,9 @@ components:
         status:
           $ref: '#/components/schemas/PatientStatusEnum'
       required:
+      - date_of_birth
       - first_name
+      - gender
       - last_name
       - patient_number
     PatientStatusEnum:

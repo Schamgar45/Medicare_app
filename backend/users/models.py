@@ -1,5 +1,8 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager as DjangoUserManager
+
+from .validators import validate_phone
 
 
 class UserManager(DjangoUserManager):
@@ -30,7 +33,7 @@ class User(AbstractUser):
         MASCULIN = "MASCULIN", "Masculin"
         FEMININ = "FEMININ", "Féminin"
 
-    phone = models.CharField(max_length=30, blank=True)
+    phone = models.CharField(max_length=30, blank=True, validators=[validate_phone])
 
     gender = models.CharField(
         max_length=20,
@@ -52,7 +55,28 @@ class User(AbstractUser):
 
     email = models.EmailField(unique=True)
 
+    avatar = models.ImageField(
+        upload_to="avatars/",
+        blank=True,
+        null=True,
+        help_text="Photo de profil (optionnelle).",
+    )
+    password_changed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Date du dernier changement de mot de passe (limite : 1 fois / 7 jours).",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     failed_login_attempts = models.IntegerField(default=0)
     lockout_until = models.DateTimeField(null=True, blank=True)
+
+    def clean(self):
+        super().clean()
+        if self.phone:
+            try:
+                self.phone = validate_phone(self.phone)
+            except DjangoValidationError as e:
+                from django.core.exceptions import ValidationError as V
+                raise V({"phone": e.messages})

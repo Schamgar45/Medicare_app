@@ -8,11 +8,13 @@
     <link rel="icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preload" href="/fonts/libre-caslon-condensed-400.ttf" as="font" type="font/ttf" crossorigin />
+    <link rel="preload" href="/fonts/libre-caslon-condensed-400-italic.ttf" as="font" type="font/ttf" crossorigin />
     <script>
       try {
-        var t = localStorage.getItem('mh-theme');
-        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', t);
+        var t = localStorage.getItem("mh-theme");
+        if (!t) t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", t);
       } catch (e) {}
     </script>
   </head>

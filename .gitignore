@@ -24,6 +24,9 @@ db.sqlite3
 db.sqlite3-journal
 *.sqlite3
 
+# --- Fichiers médias téléversés (photos de profil, etc.) ---
+backend/media/
+
 # --- Editeurs / OS ---
 # .vscode/ est volontairement SUIVI (settings.json partage l'interpreteur backend/.venv).
 .vscode/*
@@ -37,6 +40,7 @@ desktop.ini
 
 # --- Logs / temporaires ---
 *.log
+*.err
 npm-debug.log*
 yarn-error.log*
 __testfixtures__/

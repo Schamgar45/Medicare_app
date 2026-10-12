@@ -8,6 +8,9 @@ from .views import (
     PasswordResetView,
     PasswordResetConfirmView,
     ProfileView,
+    ProfileUpdateView,
+    ChangePasswordView,
+    ServerTimeView,
     ToggleUserActiveView,
     UserStatusToggleView,
     UserViewSet,
@@ -25,6 +28,9 @@ urlpatterns = [
         name="password_reset_confirm",
     ),
     path("profile/", ProfileView.as_view(), name="profile"),
+    path("profile/update/", ProfileUpdateView.as_view(), name="profile_update"),
+    path("change-password/", ChangePasswordView.as_view(), name="change_password"),
+    path("server-time/", ServerTimeView.as_view(), name="server_time"),
     path(
         "profile/toggle-active/", ToggleUserActiveView.as_view(), name="toggle_active"
     ),

@@ -1,7 +1,7 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
 
-# Create your models here.
-
+from users.validators import validate_date_of_birth, validate_phone
 
 
 class Patient(models.Model):
@@ -37,12 +37,14 @@ class Patient(models.Model):
 
     date_of_birth = models.DateField(
         null=True,
-        blank=True
+        blank=True,
+        validators=[validate_date_of_birth],
     )
 
     phone = models.CharField(
         max_length=30,
-        blank=True
+        blank=True,
+        validators=[validate_phone],
     )
 
     email = models.EmailField(
@@ -69,7 +71,8 @@ class Patient(models.Model):
 
     emergency_contact_phone = models.CharField(
         max_length=30,
-        blank=True
+        blank=True,
+        validators=[validate_phone],
     )
 
     emergency_contact_relationship = models.CharField(
@@ -93,3 +96,17 @@ class Patient(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def clean(self):
+        super().clean()
+        errors: dict[str, list[str]] = {}
+        for field in ("phone", "emergency_contact_phone"):
+            value = getattr(self, field)
+            if value:
+                try:
+                    setattr(self, field, validate_phone(value))
+                except DjangoValidationError as e:
+                    errors[field] = e.messages
+        if errors:
+            from django.core.exceptions import ValidationError as V
+            raise V(errors)

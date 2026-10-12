@@ -23,6 +23,9 @@ class RolePermission(BasePermission):
         required_roles = self.required_roles or getattr(view, "required_roles", [])
         if not required_roles:
             return True
+        # Un superuser est toujours traité comme ADMIN (cohérent avec is_admin).
+        if "ADMIN" in required_roles and is_admin(request.user):
+            return True
         return request.user.role in required_roles
 
 

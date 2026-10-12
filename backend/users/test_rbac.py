@@ -62,7 +62,13 @@ class RoleMatrixTests(APITestCase):
                     self.assertEqual(self.client.get(url).status_code, expected)
 
     def test_write_access_on_patients(self):
-        payload = {"patient_number": "PAT-1", "first_name": "Jean", "last_name": "Ndaye"}
+        payload = {
+            "patient_number": "PAT-1",
+            "first_name": "Jean",
+            "last_name": "Ndaye",
+            "gender": "MALE",
+            "date_of_birth": "1990-01-01",
+        }
         for role, expected in [
             (RECEPTIONIST, 201),
             (DOCTOR, 403),  # l'enregistrement d'un patient se fait à la réception

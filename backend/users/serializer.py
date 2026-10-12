@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import User
+from .validators import normalize_phone, validate_phone
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
@@ -17,6 +18,8 @@ from django.contrib.auth.password_validation import validate_password
 
 class UserSerializer(serializers.ModelSerializer):
 
+    avatar = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -29,15 +32,148 @@ class UserSerializer(serializers.ModelSerializer):
             "gender",
             "role",
             "status",
+            "is_superuser",
+            "avatar",
             "created_at",
             "updated_at",
+            "password_changed_at",
         ]
 
         read_only_fields = [
             "id",
+            "is_superuser",
             "created_at",
             "updated_at",
+            "password_changed_at",
         ]
+
+    def get_avatar(self, obj):
+        """URL de la photo de profil (absolue si possible, sinon relative /media/...)."""
+        if not obj.avatar:
+            return None
+        request = self.context.get("request")
+        if request is not None:
+            return request.build_absolute_uri(obj.avatar.url)
+        return obj.avatar.url
+
+    def validate_phone(self, value):
+        try:
+            return validate_phone(value)
+        except Exception as e:
+            raise serializers.ValidationError(getattr(e, "messages", [str(e)]))
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    """Mise à jour du profil par l'utilisateur lui-même.
+
+    Champs libres : prénom, nom, nom d'utilisateur, e-mail, téléphone, genre, photo.
+    Le rôle et le statut ne sont PAS modifiables ici (réservés à l'admin).
+    Changer l'e-mail est sensible : on exige le mot de passe actuel.
+    """
+
+    avatar = serializers.ImageField(required=False, allow_null=True)
+    clear_avatar = serializers.BooleanField(write_only=True, required=False)
+    current_password = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = User
+        fields = [
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "phone",
+            "gender",
+            "avatar",
+            "clear_avatar",
+            "current_password",
+        ]
+
+    def validate_username(self, value):
+        value = (value or "").strip()
+        if value and User.objects.filter(username=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("Ce nom d'utilisateur est déjà pris.")
+        return value
+
+    def validate_phone(self, value):
+        try:
+            return validate_phone(value)
+        except Exception as e:
+            raise serializers.ValidationError(getattr(e, "messages", [str(e)]))
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        if email is not None:
+            email = email.lower().strip()
+            if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+                raise serializers.ValidationError(
+                    {"email": "Un autre compte utilise déjà cette adresse e-mail."}
+                )
+            # L'e-mail sert d'identifiant de connexion : on le protège par mot de passe.
+            if email != (self.instance.email or "").lower():
+                current = attrs.get("current_password")
+                if not current:
+                    raise serializers.ValidationError(
+                        {"current_password": "Le mot de passe actuel est requis pour changer l'e-mail."}
+                    )
+                if not self.instance.check_password(current):
+                    raise serializers.ValidationError(
+                        {"current_password": "Mot de passe actuel incorrect."}
+                    )
+        attrs.pop("current_password", None)
+        return attrs
+
+    def update(self, instance, validated_data):
+        clear = validated_data.pop("clear_avatar", False)
+        validated_data.pop("current_password", None)
+        avatar = validated_data.get("avatar")
+
+        if clear:
+            # Suppression explicite de la photo (fichier + champ en base).
+            if instance.avatar:
+                instance.avatar.delete(save=False)
+            instance.avatar = None
+            validated_data.pop("avatar", None)
+        elif avatar and instance.avatar and instance.avatar.name:
+            # Remplacement : on purge l'ancien fichier pour éviter les orphelins.
+            instance.avatar.delete(save=False)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """Changement de mot de passe par l'utilisateur connecté.
+
+    L'ancien mot de passe est exigé ; le nouveau doit être confirmé,
+    différent de l'actuel et conforme aux validateurs Django. La limite
+    « 1 fois / 7 jours » est vérifiée dans la vue (elle dépend de
+    password_changed_at de l'utilisateur).
+    """
+
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Mot de passe actuel incorrect.")
+        return value
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError(
+                {"confirm_password": "Les deux nouveaux mots de passe ne correspondent pas."}
+            )
+        if attrs["new_password"] == attrs["old_password"]:
+            raise serializers.ValidationError(
+                {"new_password": "Le nouveau mot de passe doit être différent de l'actuel."}
+            )
+        validate_password(attrs["new_password"], self.context["request"].user)
+        return attrs
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
@@ -68,6 +204,12 @@ class CreateUserSerializer(serializers.ModelSerializer):
     def validate_password(self, value):
         validate_password(value)
         return value
+
+    def validate_phone(self, value):
+        try:
+            return validate_phone(value)
+        except Exception as e:
+            raise serializers.ValidationError(getattr(e, "messages", [str(e)]))
 
     def create(self, validated_data):
         password = validated_data.pop("password")

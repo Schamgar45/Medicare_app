@@ -82,6 +82,11 @@ INSTALLED_APPS = [
     "stats",
 ]
 
+# Type de clé primaire créée automatiquement (Django < 6.0 ne définit rien par
+# défaut -> warning models.W042). Aligné sur les migrations existantes
+# (BigAutoField) : aucun changement de schéma, quel que soit l'environnement.
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -176,6 +181,12 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+# Fichiers médias téléversés par les utilisateurs (photos de profil).
+# En développement, configs/urls.py les sert via static(). En production,
+# c'est le serveur web (nginx, etc.) ou un stockage objet qui doit les servir.
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ("users.authentication.StatusJWTAuthentication",),
     # Refus par défaut : un endpoint doit déclarer explicitement les rôles autorisés
@@ -195,7 +206,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "MediCare Connect API",
     "DESCRIPTION": "API REST de gestion d'un centre médical (Django REST Framework).",
-    "VERSION": "1.0.0",
+    "VERSION": "1.2.0",
     "CONTACT": {
         "name": "API Support",
         "email": "support@example.com",

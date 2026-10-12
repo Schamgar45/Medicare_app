@@ -189,7 +189,12 @@ class DoctorWriteScopingTests(DoctorScopingBase):
 
     def test_doctor_cannot_create_patients_or_appointments(self):
         patient = self.client.post(
-            "/api/patients/", {"patient_number": "NEW", "first_name": "N", "last_name": "N"}, format="json"
+            "/api/patients/",
+            {
+                "patient_number": "NEW", "first_name": "N", "last_name": "N",
+                "gender": "MALE", "date_of_birth": "1990-01-01",
+            },
+            format="json",
         )
         self.assertEqual(patient.status_code, 403)
         appointment = self.client.post(

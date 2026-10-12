@@ -112,3 +112,41 @@ class PaymentReceiptTests(APITestCase):
         self.assertEqual(data["received_by_name"], "Claire Caisse")
         self.assertEqual(float(data["invoice_total"]), 10000)
         self.assertEqual(float(data["invoice_balance"]), 6000)
+
+
+class InvoiceDeletionTests(APITestCase):
+    """Supprimer une facture : refus propre si elle a des paiements, sinon suppression."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.admin = make_user("ADMIN")
+        cls.patient = Patient.objects.create(
+            patient_number="PAT-DEL", first_name="Jean", last_name="Ndaye"
+        )
+
+    def setUp(self):
+        self.client.force_authenticate(self.admin)
+
+    def create_invoice(self):
+        invoice = Invoice.objects.create(
+            invoice_number=f"FAC-DEL-{Invoice.objects.count() + 1}", patient=self.patient
+        )
+        return invoice
+
+    def test_invoice_without_payments_can_be_deleted(self):
+        invoice = self.create_invoice()
+        response = self.client.delete(f"/api/invoices/{invoice.id}/")
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Invoice.objects.filter(pk=invoice.id).exists())
+
+    def test_invoice_with_payments_is_refused_with_400(self):
+        from .models import Payment
+
+        invoice = self.create_invoice()
+        Payment.objects.create(
+            payment_number="PAY-DEL-1", invoice=invoice, amount=1000, payment_method="CASH"
+        )
+        response = self.client.delete(f"/api/invoices/{invoice.id}/")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("detail", response.data)
+        self.assertTrue(Invoice.objects.filter(pk=invoice.id).exists())
