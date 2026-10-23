@@ -4,7 +4,17 @@ export default {
   darkMode: ['class', '[data-theme="dark"]'],
   theme: {
     extend: {
-      fontFamily: { sans: ['"Josefin Sans"', '"Inter Variable"', 'system-ui', 'sans-serif'], caslon: ['"Libre Caslon Condensed"', '"Josefin Sans"', 'serif'] },
+      fontFamily: {
+        sans: [
+          'system-ui',
+          '-apple-system',
+          '"Segoe UI"',
+          'Roboto',
+          '"Helvetica Neue"',
+          'Arial',
+          'sans-serif',
+        ],
+      },
       colors: {
         bg: 'rgb(var(--bg) / <alpha-value>)',
         surface: 'rgb(var(--surface) / <alpha-value>)',
@@ -15,6 +25,7 @@ export default {
         mute: 'rgb(var(--mute) / <alpha-value>)',
         brand: 'rgb(var(--brand) / <alpha-value>)',
         'brand-ink': 'rgb(var(--brand-ink) / <alpha-value>)',
+        navy: 'rgb(var(--navy) / <alpha-value>)',
         accent: 'rgb(var(--accent) / <alpha-value>)',
         ok: 'rgb(var(--ok) / <alpha-value>)',
         warn: 'rgb(var(--warn) / <alpha-value>)',
