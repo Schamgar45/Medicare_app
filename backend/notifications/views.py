@@ -17,11 +17,9 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):  # génération du schéma OpenAPI
             return Notification.objects.none()
-        return Notification.objects.filter(
-            user=self.request.user
-        ).order_by("-created_at")
+        return Notification.objects.filter(user=self.request.user).order_by(
+            "-created_at"
+        )
 
     def perform_create(self, serializer):
-        serializer.save(
-            user=self.request.user
-        )
+        serializer.save(user=self.request.user)

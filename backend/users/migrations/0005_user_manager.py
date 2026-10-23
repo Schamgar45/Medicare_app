@@ -7,14 +7,14 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0004_user_gender'),
+        ("users", "0004_user_gender"),
     ]
 
     operations = [
         migrations.AlterModelManagers(
-            name='user',
+            name="user",
             managers=[
-                ('objects', users.models.UserManager()),
+                ("objects", users.models.UserManager()),
             ],
         ),
     ]

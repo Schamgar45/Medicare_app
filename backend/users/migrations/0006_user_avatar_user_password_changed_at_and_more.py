@@ -7,23 +7,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0005_user_manager'),
+        ("users", "0005_user_manager"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='avatar',
-            field=models.ImageField(blank=True, help_text='Photo de profil (optionnelle).', null=True, upload_to='avatars/'),
+            model_name="user",
+            name="avatar",
+            field=models.ImageField(
+                blank=True,
+                help_text="Photo de profil (optionnelle).",
+                null=True,
+                upload_to="avatars/",
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='password_changed_at',
-            field=models.DateTimeField(blank=True, help_text='Date du dernier changement de mot de passe (limite : 1 fois / 7 jours).', null=True),
+            model_name="user",
+            name="password_changed_at",
+            field=models.DateTimeField(
+                blank=True,
+                help_text="Date du dernier changement de mot de passe (limite : 1 fois / 7 jours).",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='phone',
-            field=models.CharField(blank=True, max_length=30, validators=[users.validators.validate_phone]),
+            model_name="user",
+            name="phone",
+            field=models.CharField(
+                blank=True, max_length=30, validators=[users.validators.validate_phone]
+            ),
         ),
     ]

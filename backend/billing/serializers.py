@@ -135,7 +135,9 @@ class PaymentSerializer(AutoNumberMixin, serializers.ModelSerializer):
     # Données du reçu : tout vient de la base, le front n'invente rien.
     patient_detail = InvoicePatientSerializer(source="invoice.patient", read_only=True)
     service_detail = InvoiceServiceSerializer(source="invoice.service", read_only=True)
-    invoice_number = serializers.CharField(source="invoice.invoice_number", read_only=True)
+    invoice_number = serializers.CharField(
+        source="invoice.invoice_number", read_only=True
+    )
     invoice_total = serializers.DecimalField(
         source="invoice.total", max_digits=12, decimal_places=2, read_only=True
     )
@@ -144,7 +146,7 @@ class PaymentSerializer(AutoNumberMixin, serializers.ModelSerializer):
     )
     received_by_name = serializers.SerializerMethodField()
 
-    def get_received_by_name(self, obj):
+    def get_received_by_name(self, obj) -> str | None:
         user = obj.received_by
         if user is None:
             return None

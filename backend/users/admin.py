@@ -28,7 +28,9 @@ class UserAdmin(DjangoUserAdmin):
             return True
         if obj.is_superuser:
             return False
-        if (obj.role == User.Role.ADMIN or obj.is_superuser) and not request.user.is_superuser:
+        if (
+            obj.role == User.Role.ADMIN or obj.is_superuser
+        ) and not request.user.is_superuser:
             return False
         return True
 

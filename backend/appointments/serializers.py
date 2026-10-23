@@ -2,7 +2,11 @@ from rest_framework import serializers
 
 from users.numbering import AutoNumberMixin
 
-from users.brief import DoctorBriefSerializer, PatientBriefSerializer, ServiceBriefSerializer
+from users.brief import (
+    DoctorBriefSerializer,
+    PatientBriefSerializer,
+    ServiceBriefSerializer,
+)
 
 from .models import Appointment
 

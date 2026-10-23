@@ -5,19 +5,12 @@ from .views import (
     PrescriptionItemViewSet,
 )
 
-
 router = DefaultRouter()
 
-router.register(
-    "prescriptions",
-    PrescriptionViewSet,
-    basename="prescription"
-)
+router.register("prescriptions", PrescriptionViewSet, basename="prescription")
 
 router.register(
-    "prescription-items",
-    PrescriptionItemViewSet,
-    basename="prescription-item"
+    "prescription-items", PrescriptionItemViewSet, basename="prescription-item"
 )
 
 

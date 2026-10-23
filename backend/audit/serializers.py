@@ -1,4 +1,6 @@
+
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 
 from .models import AuditLog
 
@@ -33,11 +35,12 @@ class AuditLogSerializer(serializers.ModelSerializer):
     actor = serializers.SerializerMethodField()
     action_label = serializers.SerializerMethodField()
     target_label = serializers.SerializerMethodField()
-    changes = serializers.SerializerMethodField()
+    changes = serializers.SerializerMethodField(
+        help_text="Liste des champs modifiés, avec leurs anciennes et nouvelles valeurs."
+    )
 
     class Meta:
         model = AuditLog
-
         fields = [
             "id",
             "user",
@@ -54,10 +57,9 @@ class AuditLogSerializer(serializers.ModelSerializer):
             "user_agent",
             "created_at",
         ]
-
         read_only_fields = fields
 
-    def get_actor(self, obj):
+    def get_actor(self, obj) -> str:
         """Qui a fait l'action : nom complet ou nom d'utilisateur."""
         if not obj.user_id:
             return "Système"
@@ -67,16 +69,16 @@ class AuditLogSerializer(serializers.ModelSerializer):
         name = (u.get_full_name() or u.username or "").strip()
         return name or f"Utilisateur #{obj.user_id}"
 
-    def get_action_label(self, obj):
+    def get_action_label(self, obj) -> str:
         return ACTION_LABELS.get(obj.action, obj.action)
 
-    def _snapshot(self, obj):
+    def _snapshot(self, obj) -> dict:
         for snap in (obj.new_data, obj.old_data):
             if isinstance(snap, dict) and snap:
                 return snap
         return {}
 
-    def get_target_label(self, obj):
+    def get_target_label(self, obj) -> str:
         """Cible de l'action : « le compte Jean Mukendi » plutôt que users.User #7."""
         snap = self._snapshot(obj)
         if obj.table_name == "users.User":
@@ -93,16 +95,32 @@ class AuditLogSerializer(serializers.ModelSerializer):
             return f"{obj.table_name} #{obj.record_id}"
         return obj.table_name or "—"
 
-    def get_changes(self, obj):
+    @extend_schema_field(
+        {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "field": {"type": "string"},
+                    "old": {},
+                    "new": {},
+                },
+                "required": ["field", "old", "new"],
+            },
+        }
+    )
+    def get_changes(self, obj) -> list[dict[str, object]]:
         """Champs modifiés : [{"field": "statut", "old": "Actif", "new": "Inactif"}]."""
         if not isinstance(obj.old_data, dict) or not isinstance(obj.new_data, dict):
             return []
+
         changes = []
         for field, old in obj.old_data.items():
             if field in ("id", "created_at", "updated_at", "password"):
                 continue
             if field not in obj.new_data:
                 continue
+
             new = obj.new_data[field]
             if old != new:
                 changes.append(
@@ -112,4 +130,5 @@ class AuditLogSerializer(serializers.ModelSerializer):
                         "new": new,
                     }
                 )
+
         return changes

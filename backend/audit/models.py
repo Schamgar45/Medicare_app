@@ -31,34 +31,17 @@ class AuditLog(models.Model):
         help_text="Acteur de l'action (qui a fait).",
     )
 
-    action = models.CharField(
-        max_length=100
-    )
+    action = models.CharField(max_length=100)
 
-    table_name = models.CharField(
-        max_length=100,
-        blank=True
-    )
+    table_name = models.CharField(max_length=100, blank=True)
 
-    record_id = models.BigIntegerField(
-        null=True,
-        blank=True
-    )
+    record_id = models.BigIntegerField(null=True, blank=True)
 
-    old_data = models.JSONField(
-        null=True,
-        blank=True
-    )
+    old_data = models.JSONField(null=True, blank=True)
 
-    new_data = models.JSONField(
-        null=True,
-        blank=True
-    )
+    new_data = models.JSONField(null=True, blank=True)
 
-    ip_address = models.GenericIPAddressField(
-        null=True,
-        blank=True
-    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     user_agent = models.CharField(
         max_length=500,
@@ -66,9 +49,7 @@ class AuditLog(models.Model):
         default="",
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         # Pas de add/change/delete via l'admin : lecture seule même pour le superadmin.

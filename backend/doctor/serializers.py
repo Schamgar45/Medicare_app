@@ -9,10 +9,12 @@ class DoctorSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     email = serializers.EmailField(source="user.email", read_only=True)
     phone = serializers.CharField(source="user.phone", read_only=True)
-    specialty_name = serializers.CharField(source="specialty.name", read_only=True, default=None)
+    specialty_name = serializers.CharField(
+        source="specialty.name", read_only=True, default=None
+    )
     service_detail = ServiceBriefSerializer(source="service", read_only=True)
 
-    def get_name(self, obj):
+    def get_name(self, obj) -> str | None:
         return obj.user.get_full_name() or obj.user.username
 
     class Meta:

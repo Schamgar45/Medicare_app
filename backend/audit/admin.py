@@ -7,7 +7,15 @@ from .models import AuditLog
 class AuditLogAdmin(admin.ModelAdmin):
     """Lecture seule, même pour le superadmin (traçabilité)."""
 
-    list_display = ("id", "action", "table_name", "record_id", "user", "ip_address", "created_at")
+    list_display = (
+        "id",
+        "action",
+        "table_name",
+        "record_id",
+        "user",
+        "ip_address",
+        "created_at",
+    )
     list_filter = ("action", "table_name")
     search_fields = ("action", "table_name")
     ordering = ("-created_at",)

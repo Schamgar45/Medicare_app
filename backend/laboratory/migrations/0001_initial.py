@@ -10,52 +10,148 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('consultations', '0001_initial'),
-        ('doctor', '0001_initial'),
-        ('patients', '0001_initial'),
+        ("consultations", "0001_initial"),
+        ("doctor", "0001_initial"),
+        ("patients", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='LabTest',
+            name="LabTest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255, unique=True)),
-                ('description', models.TextField(blank=True)),
-                ('price', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
-                ('normal_range', models.TextField(blank=True)),
-                ('is_active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255, unique=True)),
+                ("description", models.TextField(blank=True)),
+                (
+                    "price",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                ),
+                ("normal_range", models.TextField(blank=True)),
+                ("is_active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.CreateModel(
-            name='LabRequest',
+            name="LabRequest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('request_number', models.CharField(max_length=50, unique=True)),
-                ('priority', models.CharField(choices=[('NORMAL', 'Normal'), ('URGENT', 'Urgent'), ('CRITICAL', 'Critical')], default='NORMAL', max_length=20)),
-                ('clinical_information', models.TextField(blank=True)),
-                ('status', models.CharField(choices=[('REQUESTED', 'Requested'), ('SAMPLE_COLLECTED', 'Sample collected'), ('IN_PROGRESS', 'In progress'), ('RESULT_AVAILABLE', 'Result available'), ('VALIDATED', 'Validated'), ('CANCELLED', 'Cancelled')], default='REQUESTED', max_length=30)),
-                ('requested_at', models.DateTimeField(auto_now_add=True)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('consultation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lab_requests', to='consultations.consultation')),
-                ('doctor', models.ForeignKey(on_delete=django.db.models.deletion.RESTRICT, related_name='lab_requests', to='doctor.doctor')),
-                ('patient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lab_requests', to='patients.patient')),
-                ('lab_test', models.ForeignKey(on_delete=django.db.models.deletion.RESTRICT, related_name='requests', to='laboratory.labtest')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("request_number", models.CharField(max_length=50, unique=True)),
+                (
+                    "priority",
+                    models.CharField(
+                        choices=[
+                            ("NORMAL", "Normal"),
+                            ("URGENT", "Urgent"),
+                            ("CRITICAL", "Critical"),
+                        ],
+                        default="NORMAL",
+                        max_length=20,
+                    ),
+                ),
+                ("clinical_information", models.TextField(blank=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("REQUESTED", "Requested"),
+                            ("SAMPLE_COLLECTED", "Sample collected"),
+                            ("IN_PROGRESS", "In progress"),
+                            ("RESULT_AVAILABLE", "Result available"),
+                            ("VALIDATED", "Validated"),
+                            ("CANCELLED", "Cancelled"),
+                        ],
+                        default="REQUESTED",
+                        max_length=30,
+                    ),
+                ),
+                ("requested_at", models.DateTimeField(auto_now_add=True)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "consultation",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="lab_requests",
+                        to="consultations.consultation",
+                    ),
+                ),
+                (
+                    "doctor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.RESTRICT,
+                        related_name="lab_requests",
+                        to="doctor.doctor",
+                    ),
+                ),
+                (
+                    "patient",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="lab_requests",
+                        to="patients.patient",
+                    ),
+                ),
+                (
+                    "lab_test",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.RESTRICT,
+                        related_name="requests",
+                        to="laboratory.labtest",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='LabResult',
+            name="LabResult",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('result', models.TextField()),
-                ('comment', models.TextField(blank=True)),
-                ('result_date', models.DateTimeField(auto_now_add=True)),
-                ('validated_at', models.DateTimeField(blank=True, null=True)),
-                ('lab_request', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='result', to='laboratory.labrequest')),
-                ('validated_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='validated_lab_results', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("result", models.TextField()),
+                ("comment", models.TextField(blank=True)),
+                ("result_date", models.DateTimeField(auto_now_add=True)),
+                ("validated_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "lab_request",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="result",
+                        to="laboratory.labrequest",
+                    ),
+                ),
+                (
+                    "validated_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="validated_lab_results",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

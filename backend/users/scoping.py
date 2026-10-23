@@ -94,12 +94,20 @@ class DoctorScopedMixin:
 
         for field in self.doctor_visible_patient_fields:
             patient = data.get(field)
-            if patient is not None and not visible_patients(profile).filter(pk=patient.pk).exists():
-                raise PermissionDenied("Ce patient n'est pas dans votre liste de patients.")
+            if (
+                patient is not None
+                and not visible_patients(profile).filter(pk=patient.pk).exists()
+            ):
+                raise PermissionDenied(
+                    "Ce patient n'est pas dans votre liste de patients."
+                )
 
         for field, attribute in self.doctor_owned_relations.items():
             related = data.get(field)
-            if related is not None and getattr(related, f"{attribute}_id") != profile.pk:
+            if (
+                related is not None
+                and getattr(related, f"{attribute}_id") != profile.pk
+            ):
                 raise PermissionDenied("Cet élément appartient à un autre médecin.")
 
     def perform_create(self, serializer):

@@ -10,70 +10,221 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('patients', '0001_initial'),
-        ('pharmacy', '0003_stockmovement'),
+        ("patients", "0001_initial"),
+        ("pharmacy", "0003_stockmovement"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='BillingItem',
+            name="BillingItem",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255, unique=True)),
-                ('description', models.TextField(blank=True)),
-                ('category', models.CharField(blank=True, max_length=100)),
-                ('price', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
-                ('is_active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255, unique=True)),
+                ("description", models.TextField(blank=True)),
+                ("category", models.CharField(blank=True, max_length=100)),
+                (
+                    "price",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Invoice',
+            name="Invoice",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('invoice_number', models.CharField(max_length=50, unique=True)),
-                ('subtotal', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
-                ('discount', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
-                ('tax', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
-                ('total', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
-                ('amount_paid', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
-                ('balance', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
-                ('status', models.CharField(choices=[('UNPAID', 'Unpaid'), ('PARTIALLY_PAID', 'Partially paid'), ('PAID', 'Paid'), ('CANCELLED', 'Cancelled')], default='UNPAID', max_length=20)),
-                ('invoice_date', models.DateTimeField(auto_now_add=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_invoices', to=settings.AUTH_USER_MODEL)),
-                ('patient', models.ForeignKey(on_delete=django.db.models.deletion.RESTRICT, related_name='invoices', to='patients.patient')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("invoice_number", models.CharField(max_length=50, unique=True)),
+                (
+                    "subtotal",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                ),
+                (
+                    "discount",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                ),
+                (
+                    "tax",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                ),
+                (
+                    "total",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                ),
+                (
+                    "amount_paid",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                ),
+                (
+                    "balance",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("UNPAID", "Unpaid"),
+                            ("PARTIALLY_PAID", "Partially paid"),
+                            ("PAID", "Paid"),
+                            ("CANCELLED", "Cancelled"),
+                        ],
+                        default="UNPAID",
+                        max_length=20,
+                    ),
+                ),
+                ("invoice_date", models.DateTimeField(auto_now_add=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="created_invoices",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "patient",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.RESTRICT,
+                        related_name="invoices",
+                        to="patients.patient",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='InvoiceItem',
+            name="InvoiceItem",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('description', models.CharField(max_length=255)),
-                ('quantity', models.PositiveIntegerField(default=1)),
-                ('unit_price', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
-                ('total', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('billing_item', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='invoice_items', to='billing.billingitem')),
-                ('invoice', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='billing.invoice')),
-                ('medication', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='invoice_items', to='pharmacy.medication')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("description", models.CharField(max_length=255)),
+                ("quantity", models.PositiveIntegerField(default=1)),
+                (
+                    "unit_price",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                ),
+                (
+                    "total",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "billing_item",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="invoice_items",
+                        to="billing.billingitem",
+                    ),
+                ),
+                (
+                    "invoice",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="items",
+                        to="billing.invoice",
+                    ),
+                ),
+                (
+                    "medication",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="invoice_items",
+                        to="pharmacy.medication",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Payment',
+            name="Payment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('payment_number', models.CharField(max_length=50, unique=True)),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=12)),
-                ('payment_method', models.CharField(choices=[('CASH', 'Cash'), ('MOBILE_MONEY', 'Mobile Money'), ('BANK', 'Bank'), ('CARD', 'Card'), ('INSURANCE', 'Insurance')], max_length=20)),
-                ('reference', models.CharField(blank=True, max_length=150)),
-                ('status', models.CharField(choices=[('PENDING', 'Pending'), ('COMPLETED', 'Completed'), ('CANCELLED', 'Cancelled')], default='COMPLETED', max_length=20)),
-                ('payment_date', models.DateTimeField(auto_now_add=True)),
-                ('notes', models.TextField(blank=True)),
-                ('invoice', models.ForeignKey(on_delete=django.db.models.deletion.RESTRICT, related_name='payments', to='billing.invoice')),
-                ('received_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='received_payments', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("payment_number", models.CharField(max_length=50, unique=True)),
+                ("amount", models.DecimalField(decimal_places=2, max_digits=12)),
+                (
+                    "payment_method",
+                    models.CharField(
+                        choices=[
+                            ("CASH", "Cash"),
+                            ("MOBILE_MONEY", "Mobile Money"),
+                            ("BANK", "Bank"),
+                            ("CARD", "Card"),
+                            ("INSURANCE", "Insurance"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("reference", models.CharField(blank=True, max_length=150)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("PENDING", "Pending"),
+                            ("COMPLETED", "Completed"),
+                            ("CANCELLED", "Cancelled"),
+                        ],
+                        default="COMPLETED",
+                        max_length=20,
+                    ),
+                ),
+                ("payment_date", models.DateTimeField(auto_now_add=True)),
+                ("notes", models.TextField(blank=True)),
+                (
+                    "invoice",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.RESTRICT,
+                        related_name="payments",
+                        to="billing.invoice",
+                    ),
+                ),
+                (
+                    "received_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="received_payments",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

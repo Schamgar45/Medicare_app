@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0002_user_failed_login_attempts'),
+        ("users", "0002_user_failed_login_attempts"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='lockout_until',
+            model_name="user",
+            name="lockout_until",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

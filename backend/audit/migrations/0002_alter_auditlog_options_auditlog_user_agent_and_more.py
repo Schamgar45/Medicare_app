@@ -8,23 +8,30 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('audit', '0001_initial'),
+        ("audit", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='auditlog',
-            options={'default_permissions': ('view',)},
+            name="auditlog",
+            options={"default_permissions": ("view",)},
         ),
         migrations.AddField(
-            model_name='auditlog',
-            name='user_agent',
-            field=models.CharField(blank=True, default='', max_length=500),
+            model_name="auditlog",
+            name="user_agent",
+            field=models.CharField(blank=True, default="", max_length=500),
         ),
         migrations.AlterField(
-            model_name='auditlog',
-            name='user',
-            field=models.ForeignKey(blank=True, help_text="Acteur de l'action (qui a fait).", null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='audit_logs', to=settings.AUTH_USER_MODEL),
+            model_name="auditlog",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Acteur de l'action (qui a fait).",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="audit_logs",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

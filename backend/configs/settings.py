@@ -258,4 +258,6 @@ CORS_ALLOWED_ORIGINS = env_list(
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # URL de la page du FRONT qui reçoit ?uid=...&token=... puis appelle
 # POST /api/auth/password-reset-confirm/
-PASSWORD_RESET_URL = os.getenv("PASSWORD_RESET_URL", "http://localhost:5173/reset-password")
+PASSWORD_RESET_URL = os.getenv(
+    "PASSWORD_RESET_URL", "http://localhost:5173/reset-password"
+)

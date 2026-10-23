@@ -50,7 +50,7 @@ class LabRequestSerializer(AutoNumberMixin, serializers.ModelSerializer):
     lab_test_detail = LabTestBriefSerializer(source="lab_test", read_only=True)
     doctor_name = serializers.SerializerMethodField()
 
-    def get_doctor_name(self, obj):
+    def get_doctor_name(self, obj) -> str | None:
         return _doctor_name(obj.doctor)
 
     def validate(self, attrs):
@@ -103,7 +103,7 @@ class LabResultSerializer(serializers.ModelSerializer):
     request_detail = LabRequestSerializer(source="lab_request", read_only=True)
     validated_by_name = serializers.SerializerMethodField()
 
-    def get_validated_by_name(self, obj):
+    def get_validated_by_name(self, obj) -> str | None:
         user = obj.validated_by
         if user is None:
             return None

@@ -22,7 +22,9 @@ class AutoNumberMixin:
 
     def get_extra_kwargs(self):
         kwargs = super().get_extra_kwargs()
-        kwargs.setdefault(self.number_field, {}).update(required=False, allow_blank=True)
+        kwargs.setdefault(self.number_field, {}).update(
+            required=False, allow_blank=True
+        )
         return kwargs
 
     def create(self, validated_data):

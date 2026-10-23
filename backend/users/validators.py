@@ -1,4 +1,5 @@
 """Validateurs partagés (téléphone international générique, date de naissance)."""
+
 import re
 from datetime import date
 

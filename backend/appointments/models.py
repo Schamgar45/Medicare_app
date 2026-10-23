@@ -21,21 +21,14 @@ class Appointment(models.Model):
         CANCELLED = "CANCELLED", "Cancelled"
         NO_SHOW = "NO_SHOW", "No show"
 
-    appointment_number = models.CharField(
-        max_length=50,
-        unique=True
-    )
+    appointment_number = models.CharField(max_length=50, unique=True)
 
     patient = models.ForeignKey(
-        Patient,
-        on_delete=models.CASCADE,
-        related_name="appointments"
+        Patient, on_delete=models.CASCADE, related_name="appointments"
     )
 
     doctor = models.ForeignKey(
-        Doctor,
-        on_delete=models.RESTRICT,
-        related_name="appointments"
+        Doctor, on_delete=models.RESTRICT, related_name="appointments"
     )
 
     service = models.ForeignKey(
@@ -43,42 +36,32 @@ class Appointment(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="appointments"
+        related_name="appointments",
     )
 
     appointment_date = models.DateField()
 
     appointment_time = models.TimeField()
 
-    reason = models.TextField(
-        blank=True
-    )
+    reason = models.TextField(blank=True)
 
     status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.SCHEDULED
+        max_length=20, choices=Status.choices, default=Status.SCHEDULED
     )
 
-    notes = models.TextField(
-        blank=True
-    )
+    notes = models.TextField(blank=True)
 
     created_by = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="created_appointments"
+        related_name="created_appointments",
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.appointment_number

@@ -11,7 +11,10 @@ User = get_user_model()
 
 def make_user(role):
     return User.objects.create_user(
-        username=role.lower(), email=f"{role.lower()}@example.com", password="pass1234", role=role
+        username=role.lower(),
+        email=f"{role.lower()}@example.com",
+        password="pass1234",
+        role=role,
     )
 
 
@@ -23,15 +26,26 @@ class InvoiceServiceTests(APITestCase):
         cls.cashier = make_user("CASHIER")
         cls.doctor = make_user("DOCTOR")
         cls.patient = Patient.objects.create(
-            patient_number="PAT-1", first_name="Jean", last_name="Ndaye", phone="+25779000000"
+            patient_number="PAT-1",
+            first_name="Jean",
+            last_name="Ndaye",
+            phone="+25779000000",
         )
         cls.labo = MedicalService.objects.create(name="Laboratoire", theme_color="VERT")
-        cls.consult = MedicalService.objects.create(name="Consultation", theme_color="MARINE")
-        cls.closed = MedicalService.objects.create(name="Ancien service", is_active=False)
+        cls.consult = MedicalService.objects.create(
+            name="Consultation", theme_color="MARINE"
+        )
+        cls.closed = MedicalService.objects.create(
+            name="Ancien service", is_active=False
+        )
 
     def create(self, **extra):
         self.client.force_authenticate(self.cashier)
-        payload = {"invoice_number": f"FAC-{Invoice.objects.count() + 1}", "patient": self.patient.id, **extra}
+        payload = {
+            "invoice_number": f"FAC-{Invoice.objects.count() + 1}",
+            "patient": self.patient.id,
+            **extra,
+        }
         return self.client.post("/api/invoices/", payload, format="json")
 
     def test_cashier_picks_the_department_and_gets_print_details(self):
@@ -65,11 +79,18 @@ class InvoiceServiceTests(APITestCase):
         response = self.client.get(f"/api/invoices/?service={self.labo.id}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 2)
-        self.assertTrue(all(row["service_detail"]["name"] == "Laboratoire" for row in response.data["results"]))
+        self.assertTrue(
+            all(
+                row["service_detail"]["name"] == "Laboratoire"
+                for row in response.data["results"]
+            )
+        )
 
     def test_department_can_be_corrected_after_creation(self):
         invoice_id = self.create(service=self.consult.id).data["id"]
-        response = self.client.patch(f"/api/invoices/{invoice_id}/", {"service": self.labo.id}, format="json")
+        response = self.client.patch(
+            f"/api/invoices/{invoice_id}/", {"service": self.labo.id}, format="json"
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["service_detail"]["theme_color"], "VERT")
 
@@ -89,25 +110,43 @@ class PaymentReceiptTests(APITestCase):
 
     def test_payment_exposes_receipt_data(self):
         cashier = User.objects.create_user(
-            username="caisse", email="caisse@example.com", password="pass1234", role="CASHIER",
-            first_name="Claire", last_name="Caisse",
+            username="caisse",
+            email="caisse@example.com",
+            password="pass1234",
+            role="CASHIER",
+            first_name="Claire",
+            last_name="Caisse",
         )
-        patient = Patient.objects.create(patient_number="PAT-9", first_name="Jean", last_name="Ndaye")
+        patient = Patient.objects.create(
+            patient_number="PAT-9", first_name="Jean", last_name="Ndaye"
+        )
         labo = MedicalService.objects.create(name="Laboratoire", theme_color="VERT")
-        invoice = Invoice.objects.create(invoice_number="FAC-9", patient=patient, service=labo)
-        InvoiceItem.objects.create(invoice=invoice, description="Goutte épaisse", quantity=1, unit_price=10000)
+        invoice = Invoice.objects.create(
+            invoice_number="FAC-9", patient=patient, service=labo
+        )
+        InvoiceItem.objects.create(
+            invoice=invoice, description="Goutte épaisse", quantity=1, unit_price=10000
+        )
         invoice.recalculate_totals()
 
         self.client.force_authenticate(cashier)
         response = self.client.post(
             "/api/payments/",
-            {"payment_number": "PAY-1", "invoice": invoice.id, "amount": "4000", "payment_method": "CASH"},
+            {
+                "payment_number": "PAY-1",
+                "invoice": invoice.id,
+                "amount": "4000",
+                "payment_method": "CASH",
+            },
             format="json",
         )
         self.assertEqual(response.status_code, 201, response.data)
         data = self.client.get(f"/api/payments/{response.data['id']}/").data
         self.assertEqual(data["patient_detail"]["last_name"], "Ndaye")
-        self.assertEqual(data["service_detail"], {"id": labo.id, "name": "Laboratoire", "theme_color": "VERT"})
+        self.assertEqual(
+            data["service_detail"],
+            {"id": labo.id, "name": "Laboratoire", "theme_color": "VERT"},
+        )
         self.assertEqual(data["invoice_number"], "FAC-9")
         self.assertEqual(data["received_by_name"], "Claire Caisse")
         self.assertEqual(float(data["invoice_total"]), 10000)
@@ -129,7 +168,8 @@ class InvoiceDeletionTests(APITestCase):
 
     def create_invoice(self):
         invoice = Invoice.objects.create(
-            invoice_number=f"FAC-DEL-{Invoice.objects.count() + 1}", patient=self.patient
+            invoice_number=f"FAC-DEL-{Invoice.objects.count() + 1}",
+            patient=self.patient,
         )
         return invoice
 
@@ -144,7 +184,10 @@ class InvoiceDeletionTests(APITestCase):
 
         invoice = self.create_invoice()
         Payment.objects.create(
-            payment_number="PAY-DEL-1", invoice=invoice, amount=1000, payment_method="CASH"
+            payment_number="PAY-DEL-1",
+            invoice=invoice,
+            amount=1000,
+            payment_method="CASH",
         )
         response = self.client.delete(f"/api/invoices/{invoice.id}/")
         self.assertEqual(response.status_code, 400)

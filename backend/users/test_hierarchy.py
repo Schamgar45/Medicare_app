@@ -74,7 +74,9 @@ class AccountHierarchyTests(APITestCase):
     def test_admin_cannot_patch_or_delete_another_admin(self):
         self.client.force_authenticate(self.admin)
         patch = self.client.patch(
-            f"/api/auth/users/{self.other_admin.id}/", {"status": "INACTIVE"}, format="json"
+            f"/api/auth/users/{self.other_admin.id}/",
+            {"status": "INACTIVE"},
+            format="json",
         )
         self.assertEqual(patch.status_code, 403)
         delete = self.client.delete(f"/api/auth/users/{self.other_admin.id}/")
@@ -157,7 +159,9 @@ class AccountHierarchyTests(APITestCase):
         self.client.delete(f"/api/auth/users/{target.id}/")
 
         actions = set(
-            AuditLog.objects.filter(record_id=target.pk).values_list("action", flat=True)
+            AuditLog.objects.filter(record_id=target.pk).values_list(
+                "action", flat=True
+            )
         )
         self.assertEqual(actions, {"CREATE", "DEACTIVATE", "ACTIVATE", "DELETE"})
         for log in AuditLog.objects.filter(record_id=target.pk):
@@ -165,7 +169,9 @@ class AccountHierarchyTests(APITestCase):
             self.assertEqual(log.table_name, "users.User")
 
     def test_audit_is_immutable_via_orm(self):
-        log = log_user_action(actor=self.root, action=AuditLog.Action.CREATE, target=self.doctor)
+        log = log_user_action(
+            actor=self.root, action=AuditLog.Action.CREATE, target=self.doctor
+        )
         self.assertIsNotNone(log)
         with self.assertRaises(DjangoValidationError):
             log.save()
@@ -173,7 +179,9 @@ class AccountHierarchyTests(APITestCase):
             log.delete()
 
     def test_audit_api_is_readonly(self):
-        log = log_user_action(actor=self.root, action=AuditLog.Action.CREATE, target=self.doctor)
+        log = log_user_action(
+            actor=self.root, action=AuditLog.Action.CREATE, target=self.doctor
+        )
         self.client.force_authenticate(self.root)
         read = self.client.get(f"/api/audit/{log.pk}/")
         self.assertEqual(read.status_code, 200)

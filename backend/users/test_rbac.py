@@ -39,7 +39,10 @@ READ_MATRIX = {
 
 def make_user(role):
     return User.objects.create_user(
-        username=role.lower(), email=f"{role.lower()}@example.com", password="pass1234", role=role
+        username=role.lower(),
+        email=f"{role.lower()}@example.com",
+        password="pass1234",
+        role=role,
     )
 
 
@@ -79,20 +82,36 @@ class RoleMatrixTests(APITestCase):
             with self.subTest(role=role):
                 self.client.force_authenticate(self.users[role])
                 data = {**payload, "patient_number": f"PAT-{role}"}
-                self.assertEqual(self.client.post("/api/patients/", data, format="json").status_code, expected)
+                self.assertEqual(
+                    self.client.post("/api/patients/", data, format="json").status_code,
+                    expected,
+                )
 
     def test_delete_is_admin_only_by_default(self):
-        patient = Patient.objects.create(patient_number="PAT-DEL", first_name="A", last_name="B")
+        patient = Patient.objects.create(
+            patient_number="PAT-DEL", first_name="A", last_name="B"
+        )
         for role in (RECEPTIONIST, DOCTOR):
             self.client.force_authenticate(self.users[role])
-            self.assertEqual(self.client.delete(f"/api/patients/{patient.id}/").status_code, 403)
+            self.assertEqual(
+                self.client.delete(f"/api/patients/{patient.id}/").status_code, 403
+            )
         self.client.force_authenticate(self.users["ADMIN"])
-        self.assertEqual(self.client.delete(f"/api/patients/{patient.id}/").status_code, 204)
+        self.assertEqual(
+            self.client.delete(f"/api/patients/{patient.id}/").status_code, 204
+        )
 
     def test_only_admin_can_create_doctors_and_services(self):
         self.client.force_authenticate(self.users[RECEPTIONIST])
-        self.assertEqual(self.client.post("/api/services/", {"name": "X"}, format="json").status_code, 403)
-        self.assertEqual(self.client.post("/api/doctors/", {}, format="json").status_code, 403)
+        self.assertEqual(
+            self.client.post(
+                "/api/services/", {"name": "X"}, format="json"
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post("/api/doctors/", {}, format="json").status_code, 403
+        )
 
     def test_superuser_without_role_is_treated_as_admin(self):
         boss = User.objects.create_superuser("root", "root@example.com", "pass1234")
@@ -131,9 +150,13 @@ class UserAdminTests(APITestCase):
 
     def test_registration_rejects_invalid_role_and_weak_password(self):
         self.client.force_authenticate(self.admin)
-        r1 = self.client.post("/api/auth/register/", self.payload(role="GOD"), format="json")
+        r1 = self.client.post(
+            "/api/auth/register/", self.payload(role="GOD"), format="json"
+        )
         self.assertEqual(r1.status_code, 400)
-        r2 = self.client.post("/api/auth/register/", self.payload(password="12345678"), format="json")
+        r2 = self.client.post(
+            "/api/auth/register/", self.payload(password="12345678"), format="json"
+        )
         self.assertEqual(r2.status_code, 400)
 
     def test_user_list_is_admin_only_and_filterable(self):
@@ -148,11 +171,17 @@ class UserAdminTests(APITestCase):
 
     def test_admin_can_deactivate_another_user_but_not_themself(self):
         self.client.force_authenticate(self.admin)
-        ok = self.client.patch(f"/api/auth/users/{self.doctor.id}/", {"status": "INACTIVE"}, format="json")
+        ok = self.client.patch(
+            f"/api/auth/users/{self.doctor.id}/", {"status": "INACTIVE"}, format="json"
+        )
         self.assertEqual(ok.status_code, 200)
-        own = self.client.patch(f"/api/auth/users/{self.admin.id}/", {"status": "INACTIVE"}, format="json")
+        own = self.client.patch(
+            f"/api/auth/users/{self.admin.id}/", {"status": "INACTIVE"}, format="json"
+        )
         self.assertEqual(own.status_code, 400)
-        demote = self.client.patch(f"/api/auth/users/{self.admin.id}/", {"role": "DOCTOR"}, format="json")
+        demote = self.client.patch(
+            f"/api/auth/users/{self.admin.id}/", {"role": "DOCTOR"}, format="json"
+        )
         self.assertEqual(demote.status_code, 400)
 
 
@@ -161,9 +190,12 @@ class ListFeaturesTests(APITestCase):
     def setUpTestData(cls):
         cls.receptionist = make_user(RECEPTIONIST)
         Patient.objects.bulk_create(
-            Patient(patient_number=f"P{i:03}", first_name=f"Name{i}", last_name="Test") for i in range(25)
+            Patient(patient_number=f"P{i:03}", first_name=f"Name{i}", last_name="Test")
+            for i in range(25)
         )
-        Patient.objects.create(patient_number="Z999", first_name="Aline", last_name="Nkurunziza")
+        Patient.objects.create(
+            patient_number="Z999", first_name="Aline", last_name="Nkurunziza"
+        )
 
     def setUp(self):
         self.client.force_authenticate(self.receptionist)
@@ -204,7 +236,9 @@ class MedicationStockTests(APITestCase):
         self.client.force_authenticate(self.pharmacist)
 
     def test_current_stock_sums_batches_and_flags_low_stock(self):
-        rows = {m["name"]: m for m in self.client.get("/api/medications/").data["results"]}
+        rows = {
+            m["name"]: m for m in self.client.get("/api/medications/").data["results"]
+        }
         self.assertEqual(rows["Amoxicilline"]["current_stock"], 9)
         self.assertTrue(rows["Amoxicilline"]["is_low_stock"])
         self.assertEqual(rows["Paracétamol"]["current_stock"], 125)

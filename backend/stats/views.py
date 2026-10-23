@@ -96,7 +96,9 @@ def _patients(ctx):
     patients = _my_patients(ctx)
     return {
         "total": patients.count(),
-        "new_this_month": patients.filter(created_at__gte=_aware(ctx["month_start"])).count(),
+        "new_this_month": patients.filter(
+            created_at__gte=_aware(ctx["month_start"])
+        ).count(),
         "per_month": _monthly(patients, "created_at", ctx["starts"], Count("id")),
     }
 
@@ -110,7 +112,9 @@ def _doctors(ctx):
 
 def _appointments(ctx):
     appointments = _mine(ctx, Appointment.objects.all())
-    by_status = dict(appointments.values_list("status").annotate(n=Count("id")).order_by())
+    by_status = dict(
+        appointments.values_list("status").annotate(n=Count("id")).order_by()
+    )
     return {
         "today": appointments.filter(appointment_date=ctx["today"]).count(),
         "by_status": by_status,
@@ -125,7 +129,9 @@ def _consultations(ctx):
     return {
         "total": consultations.count(),
         "today": consultations.filter(consultation_date__date=ctx["today"]).count(),
-        "per_month": _monthly(consultations, "consultation_date", ctx["starts"], Count("id")),
+        "per_month": _monthly(
+            consultations, "consultation_date", ctx["starts"], Count("id")
+        ),
     }
 
 
@@ -140,7 +146,9 @@ def _lab(ctx):
     return {
         "pending_requests": requests.filter(status__in=pending).count(),
         "by_status": by_status,
-        "requests_per_month": _monthly(requests, "requested_at", ctx["starts"], Count("id")),
+        "requests_per_month": _monthly(
+            requests, "requested_at", ctx["starts"], Count("id")
+        ),
     }
 
 
@@ -160,20 +168,26 @@ def _billing(ctx):
         ),
         "outstanding_balance": _sum(unpaid, "balance"),
         "unpaid_invoices": unpaid.count(),
-        "revenue_per_month": _monthly(completed, "payment_date", ctx["starts"], Sum("amount")),
+        "revenue_per_month": _monthly(
+            completed, "payment_date", ctx["starts"], Sum("amount")
+        ),
     }
 
 
 def _pharmacy(ctx):
     today = ctx["today"]
-    in_stock = MedicationBatch.objects.filter(quantity__gt=0, expiration_date__isnull=False)
+    in_stock = MedicationBatch.objects.filter(
+        quantity__gt=0, expiration_date__isnull=False
+    )
     low_stock = (
         Medication.objects.filter(is_active=True)
         .annotate(current_stock=Coalesce(Sum("batches__quantity"), 0))
         .filter(current_stock__lte=F("minimum_stock"))
         .count()
     )
-    consumed = StockMovement.objects.filter(movement_type=StockMovement.MovementType.OUT)
+    consumed = StockMovement.objects.filter(
+        movement_type=StockMovement.MovementType.OUT
+    )
     top = (
         consumed.filter(movement_date__gte=_aware(ctx["starts"][0]))
         .values("medication__name")
@@ -189,7 +203,9 @@ def _pharmacy(ctx):
         "consumed_per_month": _monthly(
             consumed, "movement_date", ctx["starts"], Sum("quantity")
         ),
-        "top_consumed": [{"medication": r["medication__name"], "quantity": r["q"]} for r in top],
+        "top_consumed": [
+            {"medication": r["medication__name"], "quantity": r["q"]} for r in top
+        ],
     }
 
 
@@ -207,7 +223,9 @@ BUILDERS = {
 class DashboardView(APIView):
     """Chiffres clés et séries mensuelles du tableau de bord, filtrés selon le rôle."""
 
-    read_roles = ALL_STAFF  # l'ADMIN passe toujours ; chaque rôle ne reçoit que ses sections
+    read_roles = (
+        ALL_STAFF  # l'ADMIN passe toujours ; chaque rôle ne reçoit que ses sections
+    )
 
     @extend_schema(
         parameters=[

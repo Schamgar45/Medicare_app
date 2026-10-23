@@ -52,7 +52,9 @@ class TopMedicationSerializer(serializers.Serializer):
 
 class PharmacyStatsSerializer(serializers.Serializer):
     low_stock_count = serializers.IntegerField()
-    expiring_soon_count = serializers.IntegerField(help_text="Lots périmant dans les 30 jours")
+    expiring_soon_count = serializers.IntegerField(
+        help_text="Lots périmant dans les 30 jours"
+    )
     expired_count = serializers.IntegerField(help_text="Lots périmés encore en stock")
     consumed_per_month = MonthPointSerializer(many=True)
     top_consumed = TopMedicationSerializer(many=True)

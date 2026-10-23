@@ -18,7 +18,6 @@ class MedicationSerializer(serializers.ModelSerializer):
     def get_is_low_stock(self, obj) -> bool:
         return self.get_current_stock(obj) <= obj.minimum_stock
 
-
     class Meta:
         model = Medication
 

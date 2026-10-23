@@ -38,7 +38,9 @@ class BillingItemViewSet(viewsets.ModelViewSet):
 
 class InvoiceViewSet(viewsets.ModelViewSet):
 
-    queryset = Invoice.objects.select_related("patient", "service").prefetch_related("items")
+    queryset = Invoice.objects.select_related("patient", "service").prefetch_related(
+        "items"
+    )
 
     serializer_class = InvoiceSerializer
 

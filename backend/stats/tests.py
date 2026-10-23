@@ -12,24 +12,47 @@ URL = "/api/stats/dashboard/"
 
 def make_user(role):
     return User.objects.create_user(
-        username=role.lower(), email=f"{role.lower()}@example.com", password="pass1234", role=role
+        username=role.lower(),
+        email=f"{role.lower()}@example.com",
+        password="pass1234",
+        role=role,
     )
 
 
 class DashboardTests(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.users = {r: make_user(r) for r in ["ADMIN", "DOCTOR", "RECEPTIONIST", "LABORANT", "PHARMACIST", "CASHIER"]}
+        cls.users = {
+            r: make_user(r)
+            for r in [
+                "ADMIN",
+                "DOCTOR",
+                "RECEPTIONIST",
+                "LABORANT",
+                "PHARMACIST",
+                "CASHIER",
+            ]
+        }
 
-        patient = Patient.objects.create(patient_number="P1", first_name="Jean", last_name="Ndaye")
+        patient = Patient.objects.create(
+            patient_number="P1", first_name="Jean", last_name="Ndaye"
+        )
         invoice = Invoice.objects.create(invoice_number="FAC-1", patient=patient)
-        InvoiceItem.objects.create(invoice=invoice, description="Consultation", quantity=2, unit_price=500)
-        Payment.objects.create(payment_number="PAY-1", invoice=invoice, amount=300, payment_method="CASH")
+        InvoiceItem.objects.create(
+            invoice=invoice, description="Consultation", quantity=2, unit_price=500
+        )
+        Payment.objects.create(
+            payment_number="PAY-1", invoice=invoice, amount=300, payment_method="CASH"
+        )
         invoice.recalculate_totals()
 
         med = Medication.objects.create(name="Paracétamol", minimum_stock=50)
-        batch = MedicationBatch.objects.create(medication=med, batch_number="B1", quantity=10)
-        StockMovement.objects.create(medication=med, batch=batch, movement_type="OUT", quantity=7)
+        batch = MedicationBatch.objects.create(
+            medication=med, batch_number="B1", quantity=10
+        )
+        StockMovement.objects.create(
+            medication=med, batch=batch, movement_type="OUT", quantity=7
+        )
 
     def get(self, role, query=""):
         self.client.force_authenticate(self.users[role])
@@ -42,7 +65,15 @@ class DashboardTests(APITestCase):
         data = self.get("ADMIN").data
         self.assertEqual(
             data["sections"],
-            ["patients", "doctors", "appointments", "consultations", "lab", "billing", "pharmacy"],
+            [
+                "patients",
+                "doctors",
+                "appointments",
+                "consultations",
+                "lab",
+                "billing",
+                "pharmacy",
+            ],
         )
         for section in data["sections"]:
             self.assertIn(section, data)
@@ -59,21 +90,35 @@ class DashboardTests(APITestCase):
             with self.subTest(role=role):
                 data = self.get(role).data
                 self.assertEqual(data["sections"], sections)
-                leaked = {"patients", "doctors", "appointments", "consultations", "lab", "billing", "pharmacy"} - set(sections)
-                self.assertFalse(leaked & set(data), f"{role} reçoit des sections interdites")
+                leaked = {
+                    "patients",
+                    "doctors",
+                    "appointments",
+                    "consultations",
+                    "lab",
+                    "billing",
+                    "pharmacy",
+                } - set(sections)
+                self.assertFalse(
+                    leaked & set(data), f"{role} reçoit des sections interdites"
+                )
 
     def test_billing_figures(self):
         billing = self.get("CASHIER").data["billing"]
         self.assertEqual(billing["revenue_total"], 300.0)
         self.assertEqual(billing["revenue_this_month"], 300.0)
-        self.assertEqual(billing["outstanding_balance"], 700.0)  # 1000 facturé - 300 payé
+        self.assertEqual(
+            billing["outstanding_balance"], 700.0
+        )  # 1000 facturé - 300 payé
         self.assertEqual(billing["unpaid_invoices"], 1)
         self.assertEqual(billing["revenue_per_month"][-1]["value"], 300.0)
 
     def test_pharmacy_figures(self):
         pharmacy = self.get("PHARMACIST").data["pharmacy"]
         self.assertEqual(pharmacy["low_stock_count"], 1)
-        self.assertEqual(pharmacy["top_consumed"], [{"medication": "Paracétamol", "quantity": 7}])
+        self.assertEqual(
+            pharmacy["top_consumed"], [{"medication": "Paracétamol", "quantity": 7}]
+        )
         self.assertEqual(pharmacy["consumed_per_month"][-1]["value"], 7.0)
 
     def test_monthly_series_are_complete_and_ordered(self):

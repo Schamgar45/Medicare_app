@@ -16,7 +16,7 @@ Application de gestion d'un centre médical : **API Django** + **front React**.
 | Outil | Version | Où le vérifier |
 |---|---|---|
 | Python | 3.12 | `python --version` |
-| Node.js | 20 ou plus (LTS) | `node --version` |
+| Node.js | 20.19+ ou 22.12+ (LTS) | `node --version` |
 
 ## Démarrage
 

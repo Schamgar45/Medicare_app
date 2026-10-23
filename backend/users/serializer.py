@@ -47,7 +47,7 @@ class UserSerializer(serializers.ModelSerializer):
             "password_changed_at",
         ]
 
-    def get_avatar(self, obj):
+    def get_avatar(self, obj) -> str | None:
         """URL de la photo de profil (absolue si possible, sinon relative /media/...)."""
         if not obj.avatar:
             return None
@@ -91,7 +91,12 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
 
     def validate_username(self, value):
         value = (value or "").strip()
-        if value and User.objects.filter(username=value).exclude(pk=self.instance.pk).exists():
+        if (
+            value
+            and User.objects.filter(username=value)
+            .exclude(pk=self.instance.pk)
+            .exists()
+        ):
             raise serializers.ValidationError("Ce nom d'utilisateur est déjà pris.")
         return value
 
@@ -114,7 +119,9 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
                 current = attrs.get("current_password")
                 if not current:
                     raise serializers.ValidationError(
-                        {"current_password": "Le mot de passe actuel est requis pour changer l'e-mail."}
+                        {
+                            "current_password": "Le mot de passe actuel est requis pour changer l'e-mail."
+                        }
                     )
                 if not self.instance.check_password(current):
                     raise serializers.ValidationError(
@@ -166,11 +173,15 @@ class ChangePasswordSerializer(serializers.Serializer):
     def validate(self, attrs):
         if attrs["new_password"] != attrs["confirm_password"]:
             raise serializers.ValidationError(
-                {"confirm_password": "Les deux nouveaux mots de passe ne correspondent pas."}
+                {
+                    "confirm_password": "Les deux nouveaux mots de passe ne correspondent pas."
+                }
             )
         if attrs["new_password"] == attrs["old_password"]:
             raise serializers.ValidationError(
-                {"new_password": "Le nouveau mot de passe doit être différent de l'actuel."}
+                {
+                    "new_password": "Le nouveau mot de passe doit être différent de l'actuel."
+                }
             )
         validate_password(attrs["new_password"], self.context["request"].user)
         return attrs
@@ -180,7 +191,9 @@ class CreateUserSerializer(serializers.ModelSerializer):
     """Création d'un compte par un ADMIN (voir RegisterView)."""
 
     password = serializers.CharField(write_only=True, min_length=8)
-    role = serializers.ChoiceField(choices=User.Role.choices, default=User.Role.RECEPTIONIST)
+    role = serializers.ChoiceField(
+        choices=User.Role.choices, default=User.Role.RECEPTIONIST
+    )
 
     class Meta:
         model = User
@@ -277,7 +290,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         attrs[self.username_field] = getattr(user, self.username_field)
         data = super().validate(attrs)
-        data["user"] = UserSerializer(self.user).data
+        data["user"] = UserSerializer(self.user, context=self.context).data
         return data
 
 

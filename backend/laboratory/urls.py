@@ -6,25 +6,12 @@ from .views import (
     LabResultViewSet,
 )
 
-
 router = DefaultRouter()
 
-router.register(
-    "lab/tests",
-    LabTestViewSet,
-    basename="lab-test"
-)
+router.register("lab/tests", LabTestViewSet, basename="lab-test")
 
-router.register(
-    "lab/requests",
-    LabRequestViewSet,
-    basename="lab-request"
-)
+router.register("lab/requests", LabRequestViewSet, basename="lab-request")
 
-router.register(
-    "lab/results",
-    LabResultViewSet,
-    basename="lab-result"
-)
+router.register("lab/results", LabResultViewSet, basename="lab-result")
 
 urlpatterns = router.urls

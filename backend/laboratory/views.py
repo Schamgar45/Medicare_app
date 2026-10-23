@@ -89,7 +89,10 @@ class LabRequestViewSet(DoctorScopedMixin, viewsets.ModelViewSet):
 
         super().perform_update(serializer)
 
-        if new_status == Status.SAMPLE_COLLECTED and instance.sample_collected_at is None:
+        if (
+            new_status == Status.SAMPLE_COLLECTED
+            and instance.sample_collected_at is None
+        ):
             instance.sample_collected_at = timezone.now()
             instance.save(update_fields=["sample_collected_at"])
 
@@ -107,7 +110,9 @@ class LabResultViewSet(DoctorScopedMixin, viewsets.ModelViewSet):
     )
     serializer_class = LabResultSerializer
 
-    doctor_lookup = "lab_request__doctor"  # le médecin lit les résultats de ses demandes
+    doctor_lookup = (
+        "lab_request__doctor"  # le médecin lit les résultats de ses demandes
+    )
 
     read_roles = [DOCTOR, LABORANT]
     write_roles = [LABORANT]
@@ -126,13 +131,19 @@ class LabResultViewSet(DoctorScopedMixin, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         result = serializer.save()
         lab_request = result.lab_request
-        if lab_request.status in (Status.REQUESTED, Status.SAMPLE_COLLECTED, Status.IN_PROGRESS):
+        if lab_request.status in (
+            Status.REQUESTED,
+            Status.SAMPLE_COLLECTED,
+            Status.IN_PROGRESS,
+        ):
             lab_request.status = Status.RESULT_AVAILABLE
             lab_request.save(update_fields=["status"])
 
     def perform_update(self, serializer):
         if serializer.instance.validated_at:
-            raise ValidationError("Résultat déjà validé : il ne peut plus être modifié.")
+            raise ValidationError(
+                "Résultat déjà validé : il ne peut plus être modifié."
+            )
         super().perform_update(serializer)
 
     @extend_schema(request=None, responses=LabResultSerializer)

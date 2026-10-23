@@ -14,7 +14,10 @@ URL = "/api/patients/"
 
 def make_user(role):
     return User.objects.create_user(
-        username=role.lower(), email=f"{role.lower()}@example.com", password="pass1234", role=role
+        username=role.lower(),
+        email=f"{role.lower()}@example.com",
+        password="pass1234",
+        role=role,
     )
 
 
@@ -51,7 +54,11 @@ class DateOfBirthValidationTests(APITestCase):
     def test_today_and_past_dates_accepted(self):
         self.client.force_authenticate(self.receptionist)
         today = timezone.localdate()
-        for value in (today.isoformat(), (today - timedelta(days=1)).isoformat(), (today - timedelta(days=30 * 12)).isoformat()):
+        for value in (
+            today.isoformat(),
+            (today - timedelta(days=1)).isoformat(),
+            (today - timedelta(days=30 * 12)).isoformat(),
+        ):
             with self.subTest(value=value):
                 resp = self.client.post(URL, self.payload(value), format="json")
                 self.assertEqual(resp.status_code, 201, resp.data)
@@ -75,7 +82,11 @@ class DateOfBirthValidationTests(APITestCase):
 
     def test_blank_gender_rejected_by_api(self):
         self.client.force_authenticate(self.receptionist)
-        resp = self.client.post(URL, self.payload(timezone.localdate().isoformat(), gender=""), format="json")
+        resp = self.client.post(
+            URL,
+            self.payload(timezone.localdate().isoformat(), gender=""),
+            format="json",
+        )
         self.assertEqual(resp.status_code, 400)
         self.assertIn("gender", resp.data)
         self.assertFalse(Patient.objects.filter(last_name="Ndaye").exists())
@@ -86,12 +97,21 @@ class DateOfBirthModelValidatorTests(TestCase):
 
     def test_full_clean_rejects_future_date(self):
         tomorrow = timezone.localdate() + timedelta(days=1)
-        patient = Patient(patient_number="PAT-T1", first_name="Jean", last_name="Ndaye", date_of_birth=tomorrow)
+        patient = Patient(
+            patient_number="PAT-T1",
+            first_name="Jean",
+            last_name="Ndaye",
+            date_of_birth=tomorrow,
+        )
         with self.assertRaisesMessage(Exception, "ne peut pas être dans le futur"):
             patient.full_clean()
 
     def test_full_clean_accepts_past_date(self):
         yesterday = timezone.localdate() - timedelta(days=1)
-        patient = Patient(patient_number="PAT-T2", first_name="Jean", last_name="Ndaye", date_of_birth=yesterday)
+        patient = Patient(
+            patient_number="PAT-T2",
+            first_name="Jean",
+            last_name="Ndaye",
+            date_of_birth=yesterday,
+        )
         patient.full_clean()  # ne doit pas lever d'exception
-

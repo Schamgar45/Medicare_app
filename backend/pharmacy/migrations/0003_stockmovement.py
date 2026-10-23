@@ -8,23 +8,69 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('pharmacy', '0002_medicationbatch'),
+        ("pharmacy", "0002_medicationbatch"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='StockMovement',
+            name="StockMovement",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('movement_type', models.CharField(choices=[('IN', 'Entrée'), ('OUT', 'Sortie'), ('ADJUSTMENT', 'Ajustement'), ('RETURN', 'Retour'), ('EXPIRED', 'Expiré'), ('DAMAGED', 'Endommagé')], max_length=20)),
-                ('quantity', models.PositiveIntegerField()),
-                ('reason', models.TextField(blank=True)),
-                ('reference', models.CharField(blank=True, max_length=100)),
-                ('movement_date', models.DateTimeField(auto_now_add=True)),
-                ('batch', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='stock_movements', to='pharmacy.medicationbatch')),
-                ('medication', models.ForeignKey(on_delete=django.db.models.deletion.RESTRICT, related_name='stock_movements', to='pharmacy.medication')),
-                ('performed_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='stock_movements', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "movement_type",
+                    models.CharField(
+                        choices=[
+                            ("IN", "Entrée"),
+                            ("OUT", "Sortie"),
+                            ("ADJUSTMENT", "Ajustement"),
+                            ("RETURN", "Retour"),
+                            ("EXPIRED", "Expiré"),
+                            ("DAMAGED", "Endommagé"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("quantity", models.PositiveIntegerField()),
+                ("reason", models.TextField(blank=True)),
+                ("reference", models.CharField(blank=True, max_length=100)),
+                ("movement_date", models.DateTimeField(auto_now_add=True)),
+                (
+                    "batch",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="stock_movements",
+                        to="pharmacy.medicationbatch",
+                    ),
+                ),
+                (
+                    "medication",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.RESTRICT,
+                        related_name="stock_movements",
+                        to="pharmacy.medication",
+                    ),
+                ),
+                (
+                    "performed_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="stock_movements",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

@@ -47,7 +47,9 @@ def log_user_action(
             old_data=old,
             new_data=new if new is not None else (snapshot_user(target)),
             ip_address=client_ip(request),
-            user_agent=(request.META.get("HTTP_USER_AGENT", "")[:500] if request else ""),
+            user_agent=(
+                request.META.get("HTTP_USER_AGENT", "")[:500] if request else ""
+            ),
         )
     except Exception:
         return None

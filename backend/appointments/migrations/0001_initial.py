@@ -10,29 +10,84 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('doctor', '0001_initial'),
-        ('patients', '0001_initial'),
-        ('services', '0001_initial'),
+        ("doctor", "0001_initial"),
+        ("patients", "0001_initial"),
+        ("services", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Appointment',
+            name="Appointment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('appointment_number', models.CharField(max_length=50, unique=True)),
-                ('appointment_date', models.DateField()),
-                ('appointment_time', models.TimeField()),
-                ('reason', models.TextField(blank=True)),
-                ('status', models.CharField(choices=[('SCHEDULED', 'Scheduled'), ('CONFIRMED', 'Confirmed'), ('WAITING', 'Waiting'), ('IN_PROGRESS', 'In progress'), ('COMPLETED', 'Completed'), ('CANCELLED', 'Cancelled'), ('NO_SHOW', 'No show')], default='SCHEDULED', max_length=20)),
-                ('notes', models.TextField(blank=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_appointments', to=settings.AUTH_USER_MODEL)),
-                ('doctor', models.ForeignKey(on_delete=django.db.models.deletion.RESTRICT, related_name='appointments', to='doctor.doctor')),
-                ('patient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='appointments', to='patients.patient')),
-                ('service', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='appointments', to='services.medicalservice')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("appointment_number", models.CharField(max_length=50, unique=True)),
+                ("appointment_date", models.DateField()),
+                ("appointment_time", models.TimeField()),
+                ("reason", models.TextField(blank=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("SCHEDULED", "Scheduled"),
+                            ("CONFIRMED", "Confirmed"),
+                            ("WAITING", "Waiting"),
+                            ("IN_PROGRESS", "In progress"),
+                            ("COMPLETED", "Completed"),
+                            ("CANCELLED", "Cancelled"),
+                            ("NO_SHOW", "No show"),
+                        ],
+                        default="SCHEDULED",
+                        max_length=20,
+                    ),
+                ),
+                ("notes", models.TextField(blank=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="created_appointments",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "doctor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.RESTRICT,
+                        related_name="appointments",
+                        to="doctor.doctor",
+                    ),
+                ),
+                (
+                    "patient",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="appointments",
+                        to="patients.patient",
+                    ),
+                ),
+                (
+                    "service",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="appointments",
+                        to="services.medicalservice",
+                    ),
+                ),
             ],
         ),
     ]

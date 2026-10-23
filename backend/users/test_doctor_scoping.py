@@ -19,7 +19,10 @@ User = get_user_model()
 
 def make_user(username, role):
     return User.objects.create_user(
-        username=username, email=f"{username}@example.com", password="pass1234", role=role
+        username=username,
+        email=f"{username}@example.com",
+        password="pass1234",
+        role=role,
     )
 
 
@@ -37,42 +40,78 @@ class DoctorScopingBase(APITestCase):
         cls.doc_b = Doctor.objects.create(user=cls.user_b)
 
         # patient A : suivi par le Dr A ; patient B : suivi par le Dr B ; patient X : personne
-        cls.pat_a = Patient.objects.create(patient_number="PA", first_name="Alice", last_name="A")
-        cls.pat_b = Patient.objects.create(patient_number="PB", first_name="Bob", last_name="B")
-        cls.pat_x = Patient.objects.create(patient_number="PX", first_name="Xavier", last_name="X")
+        cls.pat_a = Patient.objects.create(
+            patient_number="PA", first_name="Alice", last_name="A"
+        )
+        cls.pat_b = Patient.objects.create(
+            patient_number="PB", first_name="Bob", last_name="B"
+        )
+        cls.pat_x = Patient.objects.create(
+            patient_number="PX", first_name="Xavier", last_name="X"
+        )
 
         cls.appt_a = Appointment.objects.create(
-            appointment_number="RDV-A", patient=cls.pat_a, doctor=cls.doc_a,
-            appointment_date=date.today(), appointment_time=time(9, 0),
+            appointment_number="RDV-A",
+            patient=cls.pat_a,
+            doctor=cls.doc_a,
+            appointment_date=date.today(),
+            appointment_time=time(9, 0),
         )
         cls.appt_b = Appointment.objects.create(
-            appointment_number="RDV-B", patient=cls.pat_b, doctor=cls.doc_b,
-            appointment_date=date.today(), appointment_time=time(10, 0),
+            appointment_number="RDV-B",
+            patient=cls.pat_b,
+            doctor=cls.doc_b,
+            appointment_date=date.today(),
+            appointment_time=time(10, 0),
         )
 
         cls.cons_a = Consultation.objects.create(
-            consultation_number="C-A", patient=cls.pat_a, doctor=cls.doc_a, appointment=cls.appt_a
+            consultation_number="C-A",
+            patient=cls.pat_a,
+            doctor=cls.doc_a,
+            appointment=cls.appt_a,
         )
         cls.cons_b = Consultation.objects.create(
-            consultation_number="C-B", patient=cls.pat_b, doctor=cls.doc_b, appointment=cls.appt_b
+            consultation_number="C-B",
+            patient=cls.pat_b,
+            doctor=cls.doc_b,
+            appointment=cls.appt_b,
         )
 
         cls.med = Medication.objects.create(name="Paracétamol")
         cls.presc_a = Prescription.objects.create(
-            prescription_number="PRE-A", consultation=cls.cons_a, patient=cls.pat_a, doctor=cls.doc_a
+            prescription_number="PRE-A",
+            consultation=cls.cons_a,
+            patient=cls.pat_a,
+            doctor=cls.doc_a,
         )
         cls.presc_b = Prescription.objects.create(
-            prescription_number="PRE-B", consultation=cls.cons_b, patient=cls.pat_b, doctor=cls.doc_b
+            prescription_number="PRE-B",
+            consultation=cls.cons_b,
+            patient=cls.pat_b,
+            doctor=cls.doc_b,
         )
-        cls.item_a = PrescriptionItem.objects.create(prescription=cls.presc_a, medication=cls.med)
-        cls.item_b = PrescriptionItem.objects.create(prescription=cls.presc_b, medication=cls.med)
+        cls.item_a = PrescriptionItem.objects.create(
+            prescription=cls.presc_a, medication=cls.med
+        )
+        cls.item_b = PrescriptionItem.objects.create(
+            prescription=cls.presc_b, medication=cls.med
+        )
 
         test = LabTest.objects.create(name="Goutte épaisse")
         cls.lab_a = LabRequest.objects.create(
-            request_number="L-A", consultation=cls.cons_a, patient=cls.pat_a, doctor=cls.doc_a, lab_test=test
+            request_number="L-A",
+            consultation=cls.cons_a,
+            patient=cls.pat_a,
+            doctor=cls.doc_a,
+            lab_test=test,
         )
         cls.lab_b = LabRequest.objects.create(
-            request_number="L-B", consultation=cls.cons_b, patient=cls.pat_b, doctor=cls.doc_b, lab_test=test
+            request_number="L-B",
+            consultation=cls.cons_b,
+            patient=cls.pat_b,
+            doctor=cls.doc_b,
+            lab_test=test,
         )
         cls.res_a = LabResult.objects.create(lab_request=cls.lab_a, result="POSITIF")
         cls.res_b = LabResult.objects.create(lab_request=cls.lab_b, result="NEGATIF")
@@ -132,8 +171,11 @@ class DoctorReadScopingTests(DoctorScopingBase):
     def test_patient_becomes_visible_once_an_appointment_is_booked(self):
         self.assertNotIn(self.pat_x.id, self.ids("/api/patients/", self.user_a))
         Appointment.objects.create(
-            appointment_number="RDV-X", patient=self.pat_x, doctor=self.doc_a,
-            appointment_date=date.today(), appointment_time=time(11, 0),
+            appointment_number="RDV-X",
+            patient=self.pat_x,
+            doctor=self.doc_a,
+            appointment_date=date.today(),
+            appointment_time=time(11, 0),
         )
         self.assertIn(self.pat_x.id, self.ids("/api/patients/", self.user_a))
 
@@ -147,19 +189,28 @@ class DoctorReadScopingTests(DoctorScopingBase):
 
     def test_doctor_account_without_doctor_profile_sees_nothing(self):
         orphan = make_user("orphan", "DOCTOR")
-        for url in ["/api/patients/", "/api/appointments/", "/api/consultations/", "/api/prescriptions/"]:
+        for url in [
+            "/api/patients/",
+            "/api/appointments/",
+            "/api/consultations/",
+            "/api/prescriptions/",
+        ]:
             with self.subTest(url=url):
                 self.assertEqual(self.ids(url, orphan), set())
 
     def test_scoping_works_with_a_real_jwt_login(self):
         login = self.client.post(
-            "/api/auth/login/", {"email": "dr_a@example.com", "password": "pass1234"}, format="json"
+            "/api/auth/login/",
+            {"email": "dr_a@example.com", "password": "pass1234"},
+            format="json",
         )
         self.assertEqual(login.status_code, 200)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {login.data['access']}")
         patients = self.client.get("/api/patients/")
         self.assertEqual([p["id"] for p in patients.data["results"]], [self.pat_a.id])
-        self.assertEqual(self.client.get(f"/api/consultations/{self.cons_b.id}/").status_code, 404)
+        self.assertEqual(
+            self.client.get(f"/api/consultations/{self.cons_b.id}/").status_code, 404
+        )
 
     def test_doctors_me(self):
         self.client.force_authenticate(self.user_a)
@@ -176,14 +227,24 @@ class DoctorWriteScopingTests(DoctorScopingBase):
 
     def test_doctor_cannot_modify_or_delete_other_doctors_records(self):
         self.assertEqual(
-            self.client.patch(f"/api/consultations/{self.cons_b.id}/", {"diagnosis": "x"}, format="json").status_code,
+            self.client.patch(
+                f"/api/consultations/{self.cons_b.id}/",
+                {"diagnosis": "x"},
+                format="json",
+            ).status_code,
             404,
         )
         self.assertEqual(
-            self.client.patch(f"/api/appointments/{self.appt_b.id}/", {"status": "CANCELLED"}, format="json").status_code,
+            self.client.patch(
+                f"/api/appointments/{self.appt_b.id}/",
+                {"status": "CANCELLED"},
+                format="json",
+            ).status_code,
             404,
         )
-        self.assertEqual(self.client.delete(f"/api/consultations/{self.cons_b.id}/").status_code, 403)
+        self.assertEqual(
+            self.client.delete(f"/api/consultations/{self.cons_b.id}/").status_code, 403
+        )
         self.cons_b.refresh_from_db()
         self.assertEqual(self.cons_b.diagnosis, "")
 
@@ -191,8 +252,11 @@ class DoctorWriteScopingTests(DoctorScopingBase):
         patient = self.client.post(
             "/api/patients/",
             {
-                "patient_number": "NEW", "first_name": "N", "last_name": "N",
-                "gender": "MALE", "date_of_birth": "1990-01-01",
+                "patient_number": "NEW",
+                "first_name": "N",
+                "last_name": "N",
+                "gender": "MALE",
+                "date_of_birth": "1990-01-01",
             },
             format="json",
         )
@@ -200,17 +264,24 @@ class DoctorWriteScopingTests(DoctorScopingBase):
         appointment = self.client.post(
             "/api/appointments/",
             {
-                "appointment_number": "RDV-NEW", "patient": self.pat_x.id, "doctor": self.doc_a.id,
-                "appointment_date": "2026-11-01", "appointment_time": "09:00:00",
+                "appointment_number": "RDV-NEW",
+                "patient": self.pat_x.id,
+                "doctor": self.doc_a.id,
+                "appointment_date": "2026-11-01",
+                "appointment_time": "09:00:00",
             },
             format="json",
         )
         self.assertEqual(appointment.status_code, 403)
-        self.assertFalse(Appointment.objects.filter(appointment_number="RDV-NEW").exists())
+        self.assertFalse(
+            Appointment.objects.filter(appointment_number="RDV-NEW").exists()
+        )
 
     def test_doctor_can_only_change_progress_of_his_appointment(self):
         ok = self.client.patch(
-            f"/api/appointments/{self.appt_a.id}/", {"status": "IN_PROGRESS", "notes": "arrivé"}, format="json"
+            f"/api/appointments/{self.appt_a.id}/",
+            {"status": "IN_PROGRESS", "notes": "arrivé"},
+            format="json",
         )
         self.assertEqual(ok.status_code, 200)
         self.appt_a.refresh_from_db()
@@ -218,7 +289,9 @@ class DoctorWriteScopingTests(DoctorScopingBase):
 
         # il ne peut pas s'attribuer un autre patient via un rendez-vous existant
         steal = self.client.patch(
-            f"/api/appointments/{self.appt_a.id}/", {"patient": self.pat_x.id}, format="json"
+            f"/api/appointments/{self.appt_a.id}/",
+            {"patient": self.pat_x.id},
+            format="json",
         )
         self.assertEqual(steal.status_code, 403)
         self.appt_a.refresh_from_db()
@@ -227,7 +300,12 @@ class DoctorWriteScopingTests(DoctorScopingBase):
     def test_doctor_creates_consultation_for_own_patient(self):
         response = self.client.post(
             "/api/consultations/",
-            {"consultation_number": "C-NEW", "patient": self.pat_a.id, "doctor": self.doc_a.id, "reason": "Fièvre"},
+            {
+                "consultation_number": "C-NEW",
+                "patient": self.pat_a.id,
+                "doctor": self.doc_a.id,
+                "reason": "Fièvre",
+            },
             format="json",
         )
         self.assertEqual(response.status_code, 201, response.data)
@@ -235,27 +313,41 @@ class DoctorWriteScopingTests(DoctorScopingBase):
     def test_doctor_cannot_consult_in_someone_elses_name(self):
         response = self.client.post(
             "/api/consultations/",
-            {"consultation_number": "C-FAKE", "patient": self.pat_a.id, "doctor": self.doc_b.id},
+            {
+                "consultation_number": "C-FAKE",
+                "patient": self.pat_a.id,
+                "doctor": self.doc_b.id,
+            },
             format="json",
         )
         self.assertEqual(response.status_code, 403)
-        self.assertFalse(Consultation.objects.filter(consultation_number="C-FAKE").exists())
+        self.assertFalse(
+            Consultation.objects.filter(consultation_number="C-FAKE").exists()
+        )
 
     def test_doctor_cannot_consult_a_patient_that_is_not_his(self):
         response = self.client.post(
             "/api/consultations/",
-            {"consultation_number": "C-X", "patient": self.pat_b.id, "doctor": self.doc_a.id},
+            {
+                "consultation_number": "C-X",
+                "patient": self.pat_b.id,
+                "doctor": self.doc_a.id,
+            },
             format="json",
         )
         self.assertEqual(response.status_code, 403)
-        self.assertFalse(Consultation.objects.filter(consultation_number="C-X").exists())
+        self.assertFalse(
+            Consultation.objects.filter(consultation_number="C-X").exists()
+        )
 
     def test_doctor_prescribes_on_own_consultation_only(self):
         ok = self.client.post(
             "/api/prescriptions/",
             {
-                "prescription_number": "PRE-NEW", "consultation": self.cons_a.id,
-                "patient": self.pat_a.id, "doctor": self.doc_a.id,
+                "prescription_number": "PRE-NEW",
+                "consultation": self.cons_a.id,
+                "patient": self.pat_a.id,
+                "doctor": self.doc_a.id,
             },
             format="json",
         )
@@ -264,13 +356,17 @@ class DoctorWriteScopingTests(DoctorScopingBase):
         other = self.client.post(
             "/api/prescriptions/",
             {
-                "prescription_number": "PRE-BAD", "consultation": self.cons_b.id,
-                "patient": self.pat_b.id, "doctor": self.doc_a.id,
+                "prescription_number": "PRE-BAD",
+                "consultation": self.cons_b.id,
+                "patient": self.pat_b.id,
+                "doctor": self.doc_a.id,
             },
             format="json",
         )
         self.assertIn(other.status_code, (400, 403))
-        self.assertFalse(Prescription.objects.filter(prescription_number="PRE-BAD").exists())
+        self.assertFalse(
+            Prescription.objects.filter(prescription_number="PRE-BAD").exists()
+        )
 
     def test_doctor_cannot_add_item_to_someone_elses_prescription(self):
         response = self.client.post(
@@ -284,24 +380,42 @@ class DoctorWriteScopingTests(DoctorScopingBase):
     def test_doctor_requests_lab_exam_on_own_consultation_only(self):
         test = LabTest.objects.get(name="Goutte épaisse")
         payload = {
-            "request_number": "L-NEW", "consultation": self.cons_a.id, "patient": self.pat_a.id,
-            "doctor": self.doc_a.id, "lab_test": test.id,
+            "request_number": "L-NEW",
+            "consultation": self.cons_a.id,
+            "patient": self.pat_a.id,
+            "doctor": self.doc_a.id,
+            "lab_test": test.id,
         }
-        self.assertEqual(self.client.post("/api/lab/requests/", payload, format="json").status_code, 201)
-        bad = {**payload, "request_number": "L-BAD", "consultation": self.cons_b.id, "patient": self.pat_b.id}
-        self.assertIn(self.client.post("/api/lab/requests/", bad, format="json").status_code, (400, 403))
+        self.assertEqual(
+            self.client.post("/api/lab/requests/", payload, format="json").status_code,
+            201,
+        )
+        bad = {
+            **payload,
+            "request_number": "L-BAD",
+            "consultation": self.cons_b.id,
+            "patient": self.pat_b.id,
+        }
+        self.assertIn(
+            self.client.post("/api/lab/requests/", bad, format="json").status_code,
+            (400, 403),
+        )
         self.assertFalse(LabRequest.objects.filter(request_number="L-BAD").exists())
 
     def test_doctor_cannot_write_lab_results(self):
         response = self.client.post(
-            "/api/lab/results/", {"lab_request": self.lab_a.id, "result": "truqué"}, format="json"
+            "/api/lab/results/",
+            {"lab_request": self.lab_a.id, "result": "truqué"},
+            format="json",
         )
         self.assertEqual(response.status_code, 403)
 
     def test_admin_is_not_restricted(self):
         self.client.force_authenticate(self.admin)
         response = self.client.patch(
-            f"/api/consultations/{self.cons_b.id}/", {"diagnosis": "revu par admin"}, format="json"
+            f"/api/consultations/{self.cons_b.id}/",
+            {"diagnosis": "revu par admin"},
+            format="json",
         )
         self.assertEqual(response.status_code, 200)
 
@@ -319,7 +433,9 @@ class DoctorDashboardScopingTests(DoctorScopingBase):
                 self.assertEqual(data["appointments"]["today"], 1)
                 self.assertEqual(data["consultations"]["total"], 1)
                 self.assertEqual(data["lab"]["pending_requests"], 1)
-                self.assertEqual(sum(p["value"] for p in data["patients"]["per_month"]), 1.0)
+                self.assertEqual(
+                    sum(p["value"] for p in data["patients"]["per_month"]), 1.0
+                )
 
     def test_admin_and_reception_dashboards_stay_global(self):
         admin = self.stats(self.admin)

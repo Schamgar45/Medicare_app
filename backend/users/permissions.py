@@ -5,7 +5,9 @@ ADMIN = "ADMIN"
 
 def is_admin(user):
     """Un superuser Django est traité comme ADMIN, même si son champ role est vide."""
-    return bool(user and user.is_authenticated and (user.is_superuser or user.role == ADMIN))
+    return bool(
+        user and user.is_authenticated and (user.is_superuser or user.role == ADMIN)
+    )
 
 
 class RolePermission(BasePermission):

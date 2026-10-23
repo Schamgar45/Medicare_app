@@ -117,7 +117,9 @@ class RefreshTokenView(TokenRefreshView):
 
 
 @extend_schema(
-    request=inline_serializer("LogoutRequest", {"refresh": drf_serializers.CharField()}),
+    request=inline_serializer(
+        "LogoutRequest", {"refresh": drf_serializers.CharField()}
+    ),
     responses={205: None, 400: DETAIL_RESPONSE},
 )
 class LogoutView(APIView):
@@ -233,7 +235,9 @@ class ProfileUpdateView(APIView):
 
     def patch(self, request):
         serializer = ProfileUpdateSerializer(
-            request.user, data=request.data, partial=True,
+            request.user,
+            data=request.data,
+            partial=True,
             context={"request": request},
         )
         serializer.is_valid(raise_exception=True)
@@ -251,7 +255,10 @@ class ProfileUpdateView(APIView):
         return Response(UserSerializer(request.user, context={"request": request}).data)
 
 
-@extend_schema(request=ChangePasswordSerializer, responses={200: DETAIL_RESPONSE, 400: DETAIL_RESPONSE})
+@extend_schema(
+    request=ChangePasswordSerializer,
+    responses={200: DETAIL_RESPONSE, 400: DETAIL_RESPONSE},
+)
 class ChangePasswordView(APIView):
     """Change le mot de passe de l'utilisateur connecté.
 
@@ -289,7 +296,14 @@ class ChangePasswordView(APIView):
         # Réinitialise aussi le compteur de verrouillage par précaution.
         user.failed_login_attempts = 0
         user.lockout_until = None
-        user.save(update_fields=["password", "password_changed_at", "failed_login_attempts", "lockout_until"])
+        user.save(
+            update_fields=[
+                "password",
+                "password_changed_at",
+                "failed_login_attempts",
+                "lockout_until",
+            ]
+        )
         logger.info("Password changed for user %s", user.id)
         return Response({"detail": "Mot de passe modifié avec succès."})
 
@@ -391,7 +405,9 @@ class ToggleUserActiveView(APIView):
             try:
                 _ensure_not_last_active_admin(user, next_status=User.Status.INACTIVE)
             except ValidationError as e:
-                return Response({"detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": e.detail}, status=status.HTTP_400_BAD_REQUEST
+                )
 
         old = snapshot_user(user)
         if action == "deactivate":
@@ -405,7 +421,9 @@ class ToggleUserActiveView(APIView):
         log_user_action(
             actor=request.user,
             action=(
-                AuditLog.Action.DEACTIVATE if action == "deactivate" else AuditLog.Action.ACTIVATE
+                AuditLog.Action.DEACTIVATE
+                if action == "deactivate"
+                else AuditLog.Action.ACTIVATE
             ),
             target=user,
             old=old,
@@ -477,7 +495,9 @@ class UserStatusToggleView(APIView):
             try:
                 _ensure_not_last_active_admin(user, next_status=new_status)
             except ValidationError as e:
-                return Response({"detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": e.detail}, status=status.HTTP_400_BAD_REQUEST
+                )
 
         old = snapshot_user(user)
         user.status = new_status
@@ -538,9 +558,9 @@ class UserViewSet(
             if target.pk == self.request.user.pk:
                 raise ValidationError("Vous ne pouvez pas modifier votre propre rôle.")
             # Seul le superuser touche à un rôle ADMIN (cible ou résultat).
-            if (_target_is_protected_admin(target) or next_role == User.Role.ADMIN) and not (
-                self.request.user.is_superuser
-            ):
+            if (
+                _target_is_protected_admin(target) or next_role == User.Role.ADMIN
+            ) and not (self.request.user.is_superuser):
                 raise PermissionDenied(
                     "Action réservée au super-administrateur : gestion des rôles d'administrateur."
                 )
@@ -657,7 +677,14 @@ class UserViewSet(
         user.status = User.Status.ACTIVE
         user.failed_login_attempts = 0
         user.lockout_until = None
-        user.save(update_fields=["status", "failed_login_attempts", "lockout_until", "updated_at"])
+        user.save(
+            update_fields=[
+                "status",
+                "failed_login_attempts",
+                "lockout_until",
+                "updated_at",
+            ]
+        )
         log_user_action(
             actor=request.user,
             action=AuditLog.Action.ACTIVATE,

@@ -2,7 +2,9 @@ from django.test import override_settings
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.files.base import ContentFile
 from rest_framework_simplejwt.tokens import RefreshToken
+import tempfile
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
@@ -48,6 +50,23 @@ class AuthAPITests(APITestCase):
             format="json",
         )
         self.assertEqual(resp2.status_code, 400)
+
+    def test_login_returns_absolute_avatar_url(self):
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                self.user.avatar.save("profile.png", ContentFile(b"image"), save=True)
+
+                response = self.client.post(
+                    "/api/auth/login/",
+                    {"email": "test@example.com", "password": "pass1234"},
+                    format="json",
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data["user"]["avatar"],
+            "http://testserver/media/avatars/profile.png",
+        )
 
     def test_password_reset_flow(self):
         # request password reset

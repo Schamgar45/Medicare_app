@@ -79,4 +79,5 @@ class User(AbstractUser):
                 self.phone = validate_phone(self.phone)
             except DjangoValidationError as e:
                 from django.core.exceptions import ValidationError as V
+
                 raise V({"phone": e.messages})

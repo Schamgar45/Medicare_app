@@ -19,7 +19,15 @@ class PatientBriefSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Patient
-        fields = ["id", "patient_number", "first_name", "last_name", "gender", "date_of_birth", "phone"]
+        fields = [
+            "id",
+            "patient_number",
+            "first_name",
+            "last_name",
+            "gender",
+            "date_of_birth",
+            "phone",
+        ]
         read_only_fields = fields
 
 
@@ -27,7 +35,7 @@ class DoctorBriefSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     service_detail = ServiceBriefSerializer(source="service", read_only=True)
 
-    def get_name(self, obj):
+    def get_name(self, obj) -> str | None:
         return obj.user.get_full_name() or obj.user.username
 
     class Meta:
