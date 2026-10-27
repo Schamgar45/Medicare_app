@@ -35,10 +35,17 @@ Régénérer le schéma après toute modification de l'API :
 
 ## 2. Sécurité
 
-| Avant | Maintenant |
-|---|---|
-| Identifiants PostgreSQL, `SECRET_KEY` et `DEBUG=True` écrits dans `settings.py` | Tout vient de variables d'environnement (`.env`, ignoré par Git) |
-| Tout utilisateur connecté pouvait tout lire / modifier / supprimer | Permissions par rôle sur chaque endpoint (§4), **refus par défaut** |
+ Avant 
+
+ Identifiants PostgreSQL, `SECRET_KEY` et `DEBUG=True` écrits dans `settings.py` | 
+ Tout utilisateur connecté pouvait tout lire / modifier / supprimer | Permissions par rôle sur chaque endpoint 
+
+
+ Maintenant |
+
+(§4), **refus par défaut** |
+
+Tout vient de variables d'environnement (`.env`, ignoré par Git) |
 | `POST /api/auth/register/` ouvert à tous | Réservé à l'ADMIN, qui choisit le rôle |
 | `/api/audit/` testait `is_staff` | Teste le rôle ADMIN |
 | Pas de mot de passe fort à la création de compte | Validateurs Django appliqués |
@@ -51,7 +58,9 @@ En production (`DJANGO_DEBUG=false`), l'application refuse de démarrer sans `DJ
 - **CORS** : origines autorisées via `CORS_ALLOWED_ORIGINS` (par défaut `localhost:5173`, `127.0.0.1:5173`, `localhost:3000`).
 - **Pagination** sur toutes les listes : `?page=2&page_size=50` (20 par défaut, 100 max).
   Réponse : `{ "count", "next", "previous", "results": [...] }`.
-  ⚠️ Les listes ne renvoient plus un tableau brut.
+
+   Les listes ne renvoient plus un tableau brut.
+
 - **Recherche** `?search=`, **tri** `?ordering=-created_at` et **filtres** par champ (`?status=`, `?doctor=3`, `?appointment_date=2026-10-01`, `?appointment_date__gte=…`).
   Les champs disponibles pour chaque endpoint sont listés dans Swagger.
 - **Médicaments** : champs `current_stock` et `is_low_stock`, et filtre `?low_stock=true` (alertes stock).
@@ -67,7 +76,7 @@ En production (`DJANGO_DEBUG=false`), l'application refuse de démarrer sans `DJ
 L'ADMIN a toujours accès à tout. Lecture = GET ; écriture = POST/PUT/PATCH ; la suppression (DELETE) est **ADMIN uniquement** sauf mention contraire.
 
 | Ressource | Lecture | Écriture |
-|---|---|---|
+
 | patients | tout le personnel (médecin : ses patients seulement) | RECEPTIONIST ; DOCTOR modifie ses patients mais n'en crée pas |
 | doctors, services, specialties | tout le personnel | ADMIN |
 | appointments | DOCTOR (les siens), RECEPTIONIST | RECEPTIONIST ; DOCTOR : `status` et `notes` seulement |

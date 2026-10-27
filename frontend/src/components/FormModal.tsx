@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,6 +8,8 @@ import { RelationSelect, Relation } from './RelationSelect';
 import { apiError } from '@/lib/api';
 import { isValidPhone, normalizePhone, PHONE_MESSAGE, todayISO } from '@/lib/format';
 import { useToast } from '@/lib/toast';
+
+const STEP_CHANGE_GUARD_MS = 500;
 
 export interface FieldDef {
   name: string;
@@ -31,6 +33,7 @@ export interface FieldDef {
   hint?: string;
   full?: boolean;
   step?: string;
+  formStep?: string;
   createOnly?: boolean;
   editOnly?: boolean;
   placeholder?: string;
@@ -117,6 +120,20 @@ export function FormModal({
     () => fields.filter((f) => (editing ? !f.createOnly : !f.editOnly)),
     [fields, editing],
   );
+  const formSteps = useMemo(() => {
+    const steps = new Map<string, FieldDef[]>();
+    visible.forEach((field) => {
+      const title = field.formStep ?? 'Informations';
+      const stepFields = steps.get(title) ?? [];
+      stepFields.push(field);
+      steps.set(title, stepFields);
+    });
+    return Array.from(steps, ([title, stepFields]) => ({ title, fields: stepFields }));
+  }, [visible]);
+  const useWizard = visible.length > 7 && formSteps.length > 1;
+  const [activeStep, setActiveStep] = useState(0);
+  const lastStepChangeAt = useRef<number | null>(null);
+  const isAdvancingStep = useRef(false);
 
   // Un select obligatoire (sexe, rôle, statut…) n'a jamais de valeur vide par
   // défaut : on présélectionne sa première option réelle au lieu d'afficher
@@ -143,11 +160,16 @@ export function FormModal({
     handleSubmit,
     reset,
     setError,
+    trigger,
     formState: { errors, isSubmitting },
   } = form;
 
   useEffect(() => {
-    if (open) reset(baseDefaults);
+    if (open) {
+      reset(baseDefaults);
+      setActiveStep(0);
+      lastStepChangeAt.current = null;
+    }
   }, [open, baseDefaults, reset]);
 
   const submit = handleSubmit(async (values) => {
@@ -157,9 +179,52 @@ export function FormModal({
     } catch (e) {
       const { message, fields: fe } = apiError(e);
       Object.entries(fe).forEach(([k, m]) => setError(k, { message: m }));
+      const firstInvalidField = visible.find((field) => fe[field.name]);
+      if (firstInvalidField && useWizard) {
+        const invalidStep = formSteps.findIndex((step) =>
+          step.fields.some((field) => field.name === firstInvalidField.name),
+        );
+        if (invalidStep >= 0) setActiveStep(invalidStep);
+      }
       toast.err(message);
     }
   });
+  const currentStep = formSteps[activeStep];
+  const advanceStep = async () => {
+    if (
+      isAdvancingStep.current ||
+      (lastStepChangeAt.current !== null &&
+        Date.now() - lastStepChangeAt.current < STEP_CHANGE_GUARD_MS)
+    ) {
+      return;
+    }
+    isAdvancingStep.current = true;
+    try {
+      if (await trigger(currentStep.fields.map((field) => field.name))) {
+        lastStepChangeAt.current = Date.now();
+        setActiveStep((step) => Math.min(step + 1, formSteps.length - 1));
+      }
+    } finally {
+      isAdvancingStep.current = false;
+    }
+  };
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (useWizard && activeStep < formSteps.length - 1) {
+      event.preventDefault();
+      void advanceStep();
+      return;
+    }
+    if (
+      useWizard &&
+      lastStepChangeAt.current !== null &&
+      Date.now() - lastStepChangeAt.current < STEP_CHANGE_GUARD_MS
+    ) {
+      event.preventDefault();
+      return;
+    }
+    void submit(event);
+  };
+  const currentFields = useWizard ? currentStep.fields : visible;
 
   return (
     <Modal
@@ -169,23 +234,61 @@ export function FormModal({
       wide={wide}
       footer={
         <>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Annuler
-          </button>
-          <button
-            type="submit"
-            form="resource-form"
-            className="btn btn-primary"
-            disabled={isSubmitting}
-          >
-            {isSubmitting && <Spinner />}
-            {submitLabel}
-          </button>
+          <div className="mr-auto flex items-center gap-2 text-xs font-medium text-sub">
+            {useWizard ? (
+              <>
+                {activeStep > 0 && (
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setActiveStep((step) => step - 1)}>
+                    Retour
+                  </button>
+                )}
+                <span>Étape {activeStep + 1} sur {formSteps.length}</span>
+              </>
+            ) : (
+              <button type="button" className="btn btn-ghost" onClick={onClose}>
+                Annuler
+              </button>
+            )}
+          </div>
+          {useWizard && activeStep === 0 && (
+            <button type="button" className="btn btn-ghost" onClick={onClose}>Annuler</button>
+          )}
+          {useWizard && activeStep < formSteps.length - 1 ? (
+            <button type="button" className="btn btn-primary" onClick={() => void advanceStep()}>
+              Suivant
+            </button>
+          ) : (
+            <button
+              type="submit"
+              form="resource-form"
+              className="btn btn-primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting && <Spinner />}
+              {submitLabel}
+            </button>
+          )}
         </>
       }
     >
-      <form id="resource-form" onSubmit={submit} className="grid gap-4 sm:grid-cols-2" noValidate>
-        {visible.map((f) => {
+      <form id="resource-form" onSubmit={handleFormSubmit} className="grid gap-4 sm:grid-cols-2" noValidate>
+        {useWizard && (
+          <div className="col-span-full mb-2" aria-label="Progression du formulaire">
+            <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-sunken" role="progressbar" aria-valuemin={1} aria-valuemax={formSteps.length} aria-valuenow={activeStep + 1}>
+              <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${((activeStep + 1) / formSteps.length) * 100}%` }} />
+            </div>
+            <ol className="grid gap-2" style={{ gridTemplateColumns: `repeat(${formSteps.length}, minmax(0, 1fr))` }}>
+              {formSteps.map((step, index) => (
+                <li key={step.title} className={clsx('min-w-0 text-center text-[10px] font-semibold sm:text-xs', index === activeStep ? 'text-brand' : index < activeStep ? 'text-ink' : 'text-mute')}>
+                  <span className={clsx('mx-auto mb-1 grid h-6 w-6 place-items-center rounded-full text-xs', index <= activeStep ? 'bg-brand text-brand-ink' : 'bg-sunken text-sub')}>{index + 1}</span>
+                  <span className="block truncate">{step.title}</span>
+                </li>
+              ))}
+            </ol>
+            <h3 className="mt-5 text-sm font-bold">{currentStep.title}</h3>
+          </div>
+        )}
+        {currentFields.map((f) => {
           const err = errors[f.name]?.message as string | undefined;
           const span = f.full || f.type === 'textarea' ? 'sm:col-span-2' : '';
           return (

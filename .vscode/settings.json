@@ -9,6 +9,23 @@
     // terminal par defaut dans le terminal integre
     "python.defaultInterpreterPath.manual": true,
 
+    // Ajoute Node aux terminaux integres et expose npm.cmd dans PowerShell.
+    "terminal.integrated.env.windows": {
+        "PATH": "C:\\Program Files\\nodejs;${env:PATH}"
+    },
+    "terminal.integrated.profiles.windows": {
+        "PowerShell (MediCare)": {
+            "path": "${env:windir}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+            "args": [
+                "-NoExit",
+                "-Command",
+                "$nodeDir = Join-Path $env:ProgramFiles 'nodejs'; $env:Path = \"$nodeDir;$env:Path\"; Set-Alias -Name npm -Value (Join-Path $nodeDir 'npm.cmd')"
+            ],
+            "icon": "terminal-powershell"
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "PowerShell (MediCare)",
+
     // ESLint / Prettier cote front
     "editor.formatOnSave": false,
     "[typescript]": {

@@ -87,10 +87,10 @@ const userCfg: ResourceConfig<User> = {
     { key: 's', header: 'Statut', render: (u) => <StatusBadge value={u.status} /> },
   ],
   fields: [
-    { name: 'first_name', label: 'Prénom', type: 'text', required: true },
-    { name: 'last_name', label: 'Nom', type: 'text', required: true },
-    { name: 'email', label: 'Email (identifiant de connexion)', type: 'email', required: true },
-    { name: 'username', label: "Nom d'utilisateur", type: 'text', required: true },
+    { name: 'first_name', label: 'Prénom', type: 'text', required: true, formStep: 'Identité' },
+    { name: 'last_name', label: 'Nom', type: 'text', required: true, formStep: 'Identité' },
+    { name: 'email', label: 'Email (identifiant de connexion)', type: 'email', required: true, formStep: 'Compte' },
+    { name: 'username', label: "Nom d'utilisateur", type: 'text', required: true, formStep: 'Compte' },
     {
       name: 'password',
       label: 'Mot de passe provisoire',
@@ -98,6 +98,7 @@ const userCfg: ResourceConfig<User> = {
       required: true,
       createOnly: true,
       hint: '8 caractères minimum',
+      formStep: 'Compte',
     },
     {
       name: 'phone',
@@ -105,6 +106,7 @@ const userCfg: ResourceConfig<User> = {
       type: 'tel',
       placeholder: '+25779987654',
       hint: 'Format international, ex. +25779987654',
+      formStep: 'Profil et accès',
     },
     {
       name: 'gender',
@@ -112,6 +114,7 @@ const userCfg: ResourceConfig<User> = {
       type: 'select',
       required: true,
       options: opts(['MASCULIN', 'FEMININ']),
+      formStep: 'Identité',
     },
     {
       name: 'role',
@@ -119,6 +122,7 @@ const userCfg: ResourceConfig<User> = {
       type: 'select',
       required: true,
       options: opts(['ADMIN', 'DOCTOR', 'RECEPTIONIST', 'LABORANT', 'PHARMACIST', 'CASHIER']),
+      formStep: 'Profil et accès',
     },
     {
       name: 'status',
@@ -127,6 +131,7 @@ const userCfg: ResourceConfig<User> = {
       required: true,
       options: opts(['ACTIVE', 'INACTIVE', 'SUSPENDED']),
       editOnly: true,
+      formStep: 'Profil et accès',
     },
   ],
   defaults: { role: 'RECEPTIONIST', status: 'ACTIVE', gender: 'MASCULIN' },

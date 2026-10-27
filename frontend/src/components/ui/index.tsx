@@ -414,16 +414,16 @@ export function Stat({
   tone?: 'brand' | 'accent' | 'warn' | 'bad';
 }) {
   return (
-    <div className="card flex items-start gap-3.5 p-4 sm:p-5">
+    <div className="card flex min-h-[106px] items-center justify-between gap-4 overflow-hidden border-l-4 border-l-brand p-4 sm:p-5">
+      <div className="min-w-0">
+        <p className="truncate text-xs font-bold uppercase tracking-[0.1em] text-sub">{l}</p>
+        <p className="mt-1 truncate text-2xl font-extrabold tabular-nums sm:text-[28px]">{value}</p>
+        {hint && <p className="mt-1 truncate text-xs text-sub">{hint}</p>}
+      </div>
       <div
-        className={clsx('grid h-10 w-10 shrink-0 place-items-center rounded-xl', STAT_TONE[tone])}
+        className={clsx('grid h-11 w-11 shrink-0 place-items-center rounded-lg sm:h-12 sm:w-12', STAT_TONE[tone])}
       >
         {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="truncate text-xs font-semibold uppercase tracking-[0.08em] text-mute">{l}</p>
-        <p className="mt-0.5 truncate text-2xl font-bold tabular-nums">{value}</p>
-        {hint && <p className="mt-0.5 truncate text-xs text-sub">{hint}</p>}
       </div>
     </div>
   );

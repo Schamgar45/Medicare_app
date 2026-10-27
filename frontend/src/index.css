@@ -174,10 +174,10 @@ html[data-theme='dark'] #boot {
     transform: translateX(-100%);
   }
   .card {
-    @apply rounded-2xl border bg-surface shadow-sm;
+    @apply rounded-xl border bg-surface shadow-sm;
   }
   .input {
-    @apply h-10 w-full rounded-xl border bg-surface px-3 text-sm text-ink placeholder:text-mute outline-none transition
+    @apply h-10 w-full rounded-lg border bg-surface px-3 text-sm text-ink placeholder:text-mute outline-none transition
     focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-60;
   }
   textarea.input {

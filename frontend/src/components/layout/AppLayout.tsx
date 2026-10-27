@@ -4,8 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bell,
   ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   LogOut,
   Menu,
   Moon,
@@ -31,11 +29,13 @@ function Brand() {
       <img
         src="/brand/logo.png"
         alt=""
-        className="h-11 w-11 rounded-full shadow-md shadow-brand/20"
+        className="h-11 w-11 shrink-0 object-contain"
       />
       <div className="leading-tight">
-        <p className="text-[17px] font-bold tracking-tight text-ink">Medicare Hospital</p>
-        <p className="text-[11px] font-medium text-mute">{CENTER.slogan}</p>
+        <p className="text-[15px] font-bold tracking-tight text-ink sm:text-[17px]">
+          {CENTER.name}
+        </p>
+        <p className="hidden text-[11px] font-medium text-mute sm:block">{CENTER.slogan}</p>
       </div>
     </div>
   );
@@ -68,7 +68,7 @@ type Counts = {
 };
 const GROUPS: NavGroup[] = ['Navigation', 'Soins médicaux', 'Pharmacie & caisse', 'Administration'];
 
-function SideNav({ items, counts }: { items: NavItem[]; counts: Counts }) {
+function SideNav({ items, counts, collapsed = false }: { items: NavItem[]; counts: Counts; collapsed?: boolean }) {
   const groups = GROUPS.map((g) => ({ g, list: items.filter((i) => i.group === g) })).filter(
     (x) => x.list.length,
   );
@@ -79,9 +79,11 @@ function SideNav({ items, counts }: { items: NavItem[]; counts: Counts }) {
     >
       {groups.map(({ g, list }) => (
         <div key={g} className="mb-4">
-          <p className="px-5 pb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-mute">
-            {g}
-          </p>
+          {!collapsed && (
+            <p className="px-5 pb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-mute">
+              {g}
+            </p>
+          )}
           {list.map(({ to, label: l, icon: Icon, countKey }) => {
             const c = countKey ? counts[countKey] : undefined;
             return (
@@ -89,18 +91,25 @@ function SideNav({ items, counts }: { items: NavItem[]; counts: Counts }) {
                 key={to}
                 to={to}
                 end={to === '/'}
+                title={collapsed ? l : undefined}
                 className={({ isActive }) =>
                   clsx(
-                    'flex items-center gap-3 border-r-[3px] px-5 py-2.5 text-[15px] font-medium transition',
+                    'flex items-center gap-3 border-r-[3px] py-2.5 text-[15px] font-medium transition',
+                    collapsed ? 'justify-center px-0' : 'px-5',
                     isActive
                       ? 'border-brand bg-brand/10 text-brand'
                       : 'border-transparent text-sub hover:bg-sunken hover:text-ink',
                   )
                 }
               >
-                <Icon className="h-[18px] w-[18px]" />
-                <span className="flex-1">{l}</span>
-                {c !== undefined && c > 0 && <span className={COUNT_CLASS}>{c}</span>}
+                <Icon className="h-[18px] w-[18px] shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1">{l}</span>
+                    {c !== undefined && c > 0 && <span className={COUNT_CLASS}>{c}</span>}
+                  </>
+                )}
+                {collapsed && <span className="sr-only">{l}</span>}
               </NavLink>
             );
           })}
@@ -115,17 +124,24 @@ function SideFoot({
   role,
   avatar,
   onLogout,
+  collapsed = false,
 }: {
   name: string;
   role?: string;
   avatar?: string | null;
   onLogout: () => void;
+  collapsed?: boolean;
 }) {
   return (
-    <div className="shrink-0 space-y-3 border-t p-4">
+    <div className={clsx('shrink-0 border-t', collapsed ? 'space-y-2 p-2' : 'space-y-3 p-4')}>
       <NavLink
         to="/mon-profil"
-        className="flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-sunken"
+        title={collapsed ? `${name} · ${label(role)}` : undefined}
+        aria-label={collapsed ? `Profil de ${name}` : undefined}
+        className={clsx(
+          'flex rounded-xl transition hover:bg-sunken',
+          collapsed ? 'justify-center p-1.5' : 'items-center gap-3 p-1.5',
+        )}
       >
         {avatar ? (
           <img
@@ -138,17 +154,24 @@ function SideFoot({
             {initials(name) || '?'}
           </span>
         )}
-        <div className="min-w-0 leading-tight">
-          <p className="truncate text-sm font-bold">{name}</p>
-          <p className="text-xs text-mute">{label(role)}</p>
-        </div>
+        {!collapsed && (
+          <div className="min-w-0 leading-tight">
+            <p className="truncate text-sm font-bold">{name}</p>
+            <p className="text-xs text-mute">{label(role)}</p>
+          </div>
+        )}
       </NavLink>
       <button
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-bad/40 bg-surface py-2.5 text-sm font-bold text-bad transition hover:bg-bad/5"
+        className={clsx(
+          'flex items-center justify-center rounded-lg border border-bad/40 bg-surface text-bad transition hover:bg-bad/5',
+          collapsed ? 'h-10 w-full' : 'w-full gap-2 py-2.5 text-sm font-bold',
+        )}
         onClick={onLogout}
+        title={collapsed ? 'Déconnexion' : undefined}
+        aria-label="Déconnexion"
       >
-        <LogOut className="h-4 w-4" />
-        Déconnexion
+        <LogOut className="h-4 w-4 shrink-0" />
+        {!collapsed && 'Déconnexion'}
       </button>
     </div>
   );
@@ -334,11 +357,11 @@ function GlobalSearch({ role }: { role?: string }) {
   }, []);
   const hasResults = result.data?.some((g) => g.results.length);
   return (
-    <div ref={ref} className="relative hidden min-w-0 max-w-xl flex-1 md:block">
+    <div ref={ref} className="relative mx-auto hidden min-w-0 max-w-xl flex-1 md:block">
       <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-mute" />
       <input
-        className="input h-10 pl-9 pr-9"
-        placeholder="Rechercher …"
+        className="input h-10 bg-sunken pl-9 pr-9"
+        placeholder="Rechercher patients, rendez-vous, médicaments…"
         aria-label="Recherche globale"
         value={query}
         onFocus={() => setOpen(true)}
@@ -407,7 +430,7 @@ export function AppLayout() {
   const { theme, toggle } = useTheme();
   const loc = useLocation();
   const [open, setOpen] = useState(false);
-  const [closed, setClosed] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const nav = useNavigate();
   const qc = useQueryClient();
   const counts = useCounts();
@@ -432,27 +455,32 @@ export function AppLayout() {
     <div
       className={clsx(
         'min-h-screen lg:grid',
-        closed ? 'lg:grid-cols-[0px_1fr]' : 'lg:grid-cols-[260px_1fr]',
+        collapsed ? 'lg:grid-cols-[76px_1fr]' : 'lg:grid-cols-[260px_1fr]',
       )}
     >
       <aside
         className={clsx(
           'sticky top-0 hidden h-screen flex-col overflow-hidden border-r bg-surface transition-all duration-300 lg:flex',
-          closed ? 'w-0 border-r-0 opacity-0' : 'w-[260px] opacity-100',
+          collapsed ? 'w-[76px]' : 'w-[260px]',
         )}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b px-5 py-4">
-          <Brand />
+        <div className={clsx('flex shrink-0 items-center border-b py-4', collapsed ? 'justify-center px-2' : 'justify-start gap-3 px-5')}>
           <button
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full border text-sub hover:bg-sunken hover:text-ink"
-            onClick={() => setClosed(true)}
-            aria-label="Réduire le menu"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded text-brand hover:bg-sunken"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? 'Déplier le menu' : 'Réduire le menu'}
+            title={collapsed ? 'Déplier le menu' : 'Réduire le menu'}
           >
-            <ChevronsLeft className="h-4 w-4" />
+            <Menu className="h-4 w-4" />
           </button>
+          {!collapsed && (
+            <span className="text-xs font-bold uppercase tracking-[0.16em] text-sub">
+              Navigation
+            </span>
+          )}
         </div>
-        <SideNav items={items} counts={counts} />
-        <SideFoot name={name} role={user?.role} avatar={user?.avatar} onLogout={handleLogout} />
+        <SideNav items={items} counts={counts} collapsed={collapsed} />
+        <SideFoot name={name} role={user?.role} avatar={user?.avatar} onLogout={handleLogout} collapsed={collapsed} />
       </aside>
 
       {open && (
@@ -465,7 +493,10 @@ export function AppLayout() {
         )}
       >
         <div className="flex shrink-0 items-center justify-between border-b px-5 py-4">
-          <Brand />
+          <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-sub">
+            <Menu className="h-4 w-4 text-brand" />
+            Navigation
+          </span>
           <button onClick={() => setOpen(false)} aria-label="Fermer le menu">
             <X className="h-5 w-5" />
           </button>
@@ -478,17 +509,14 @@ export function AppLayout() {
         <header className="sticky top-0 z-30 border-b bg-surface/90 backdrop-blur">
           <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
             <button
-              className={clsx(
-                'grid h-10 w-10 place-items-center rounded-full border bg-surface text-sub hover:bg-sunken',
-                closed ? '' : 'lg:hidden',
-              )}
-              onClick={() => (closed ? setClosed(false) : setOpen(true))}
-              aria-label={closed ? 'Déplier le menu' : 'Ouvrir le menu'}
+              className="grid h-10 w-10 place-items-center rounded-full border bg-surface text-sub hover:bg-sunken lg:hidden"
+              onClick={() => setOpen(true)}
+              aria-label="Ouvrir le menu"
             >
-              {closed ? <ChevronsRight className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <Menu className="h-5 w-5" />
             </button>
+            <Brand />
             <GlobalSearch role={user?.role} />
-            <div className="flex-1" />
             <div className="flex shrink-0 items-center gap-3">
               <button
                 className="grid h-10 w-10 place-items-center rounded-full border bg-surface text-sub hover:bg-sunken"
