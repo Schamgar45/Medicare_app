@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import { apiError } from '@/lib/api';
 import type { Role } from '@/lib/types';
+import { t, useLanguage } from '@/lib/i18n';
 
 export interface ResourceConfig<T extends { id: number }> {
   path: string;
@@ -51,6 +52,7 @@ export function ResourcePage<T extends { id: number }>({
   cfg: ResourceConfig<T>;
   onCreateActionReady?: (open: (() => void) | null) => void;
 }) {
+  useLanguage();
   const { can, user, doctor } = useAuth();
   const toast = useToast();
   const nav = useNavigate();
@@ -89,7 +91,11 @@ export function ResourcePage<T extends { id: number }>({
   const canWrite = can(...(cfg.writeRoles ?? []));
   const canCreate = !cfg.noCreate && can(...(cfg.createRoles ?? cfg.writeRoles ?? []));
   const canEdit = canWrite && cfg.canEdit !== false;
-  const fields = cfg.fieldsFor ? cfg.fieldsFor(user?.role, !!editing) : cfg.fields;
+  const fields = useMemo(
+    () => (cfg.fieldsFor ? cfg.fieldsFor(user?.role, !!editing) : cfg.fields),
+    [cfg.fields, cfg.fieldsFor, user?.role, editing],
+  );
+  const localizedColumns = cfg.columns.map((column) => ({ ...column, header: t(column.header) }));
   const canDelete = can() && cfg.canDelete !== false; // can() sans rôle = ADMIN seulement
   useEffect(() => {
     if (!onCreateActionReady) return;
@@ -104,7 +110,7 @@ export function ResourcePage<T extends { id: number }>({
         f.type === 'checkbox' ? (cfg.defaults?.[f.name] ?? true) : (cfg.defaults?.[f.name] ?? '');
     });
     return o;
-  }, [cfg]);
+  }, [cfg.defaults, cfg.fields]);
 
   const initial = useMemo(() => {
     if (editing) {
@@ -117,12 +123,12 @@ export function ResourcePage<T extends { id: number }>({
       return o;
     }
     return blank;
-  }, [editing, blank, cfg]);
+  }, [editing, blank, cfg.toForm, cfg.fields]);
 
   const columns = useMemo<Column<T>[]>(() => {
-    if (cfg.hideActions || (!canEdit && !canDelete && !cfg.rowActions)) return cfg.columns;
+    if (cfg.hideActions || (!canEdit && !canDelete && !cfg.rowActions)) return localizedColumns;
     return [
-      ...cfg.columns,
+      ...localizedColumns,
       {
         key: '_actions',
         header: '',
@@ -133,7 +139,7 @@ export function ResourcePage<T extends { id: number }>({
             {canEdit && (!cfg.canEditRow || cfg.canEditRow(r)) && (
               <button
                 className="rounded-md p-2 text-sub hover:bg-sunken"
-                aria-label="Modifier"
+                aria-label={t('Modifier')}
                 onClick={() => setEditing(r)}
               >
                 <Pencil className="h-4 w-4" />
@@ -142,7 +148,7 @@ export function ResourcePage<T extends { id: number }>({
             {canDelete && (!cfg.canDeleteRow || cfg.canDeleteRow(r)) && (
               <button
                 className="rounded-md p-2 text-bad hover:bg-bad/10"
-                aria-label="Supprimer"
+                aria-label={t('Supprimer')}
                 onClick={() => setDeleting(r)}
               >
                 <Trash2 className="h-4 w-4" />
@@ -152,7 +158,7 @@ export function ResourcePage<T extends { id: number }>({
         ),
       },
     ];
-  }, [cfg, canEdit, canDelete]);
+  }, [cfg, canEdit, canDelete, localizedColumns]);
 
   const onSubmit = useCallback(
     async (payload: Record<string, unknown>) => {
@@ -160,7 +166,7 @@ export function ResourcePage<T extends { id: number }>({
         id: editing?.id,
         data: { ...payload, ...cfg.extraPayload?.({ doctorId: doctor?.id }, !!editing) },
       })) as T;
-      toast.ok(editing ? 'Modifications enregistrées' : `${cfg.singular} créé`);
+      toast.ok(editing ? t('Modifications enregistrées') : `${t(cfg.singular)} ${t('créé')}`);
       if (!editing && r) cfg.onCreated?.(r, nav);
     },
     [save, editing, toast, cfg.singular, cfg, doctor, nav],
@@ -178,7 +184,7 @@ export function ResourcePage<T extends { id: number }>({
             {canCreate && !cfg.hideCreateButton && (
               <button className="btn btn-primary" onClick={() => setCreating(true)}>
                 <Plus className="h-4 w-4" />
-                {cfg.createLabel ?? 'Nouveau'}
+                {t(cfg.createLabel ?? 'Nouveau')}
               </button>
             )}
           </>
@@ -186,7 +192,7 @@ export function ResourcePage<T extends { id: number }>({
         return cfg.embedded ? (
           <div className="mb-3 flex flex-wrap justify-end gap-2">{actions}</div>
         ) : (
-          <PageHeader title={cfg.title} subtitle={cfg.subtitle} actions={actions} />
+          <PageHeader title={t(cfg.title)} subtitle={cfg.subtitle ? t(cfg.subtitle) : undefined} actions={actions} />
         );
       })()}
       <div className="card overflow-hidden">
@@ -195,30 +201,30 @@ export function ResourcePage<T extends { id: number }>({
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" />
             <input
               className="input pl-9"
-              placeholder="Rechercher…"
+              placeholder={t('Rechercher…')}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              aria-label="Rechercher"
+              aria-label={t('Rechercher…')}
             />
           </div>
           {cfg.filters?.map((f) => (
             <select
               key={f.name}
               className="input w-auto min-w-[140px]"
-              aria-label={f.label}
+              aria-label={t(f.label)}
               value={filters[f.name] ?? ''}
               onChange={(e) => {
                 setFilters({ ...filters, [f.name]: e.target.value });
                 setPage(1);
               }}
             >
-              <option value="">{f.label}</option>
+              <option value="">{t(f.label)}</option>
               {f.options.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {t(o.label)}
                 </option>
               ))}
             </select>
@@ -244,8 +250,8 @@ export function ResourcePage<T extends { id: number }>({
         }}
         title={
           editing
-            ? `Modifier ${cfg.singular.toLowerCase()}`
-            : `Nouveau : ${cfg.singular.toLowerCase()}`
+            ? `${t('Modifier')} ${t(cfg.singular).toLowerCase()}`
+            : `${t('Nouveau :')} ${t(cfg.singular).toLowerCase()}`
         }
         fields={fields}
         initial={initial}
@@ -254,14 +260,14 @@ export function ResourcePage<T extends { id: number }>({
       />
       <Confirm
         open={!!deleting}
-        title="Supprimer cet élément ?"
-        text="Cette action est définitive."
+        title={t('Supprimer cet élément ?')}
+        text={t('Cette action est définitive.')}
         busy={remove.isPending}
         onCancel={() => setDeleting(null)}
         onConfirm={async () => {
           try {
             await remove.mutateAsync(deleting!.id);
-            toast.ok('Supprimé');
+            toast.ok(t('Supprimé'));
           } catch (e) {
             toast.err(apiError(e).message);
           }

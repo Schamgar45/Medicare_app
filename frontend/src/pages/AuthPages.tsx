@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { api, apiError } from '@/lib/api';
 import { CENTER, APP_VERSION } from '@/lib/center';
 import { Spinner } from '@/components/ui';
+import { t, useLanguage } from '@/lib/i18n';
 
 function Shell({
   title,
@@ -15,6 +16,7 @@ function Shell({
   subtitle: string;
   children: React.ReactNode;
 }) {
+  const { language, toggleLanguage } = useLanguage();
   // Pages d'accès toujours en thème sombre (data-theme local), comme la maquette validée.
   return (
     <div
@@ -37,24 +39,23 @@ function Shell({
             <p className="text-2xl font-extrabold text-white">
               Medicare <span className="text-[#3ddc97]">Hospital</span>
             </p>
-            <p className="text-sm text-white/70">“{CENTER.slogan}”</p>
+            <p className="text-sm text-white/70">“{t(CENTER.slogan)}”</p>
           </div>
         </div>
         <div className="relative max-w-lg">
           <h2 className="text-5xl font-extrabold leading-[1.05] text-white">
-            Votre santé,
+            {t('Votre santé,')}
             <br />
-            <span className="text-[#3ddc97]">notre priorité</span>
+            <span className="text-[#3ddc97]">{t('notre priorité')}</span>
           </h2>
           <p className="mt-5 text-lg text-white/75">
-            Un accès sécurisé à votre espace de travail pour une meilleure gestion de nos services
-            hospitaliers.
+            {t('Un accès sécurisé à votre espace de travail pour une meilleure gestion de nos services hospitaliers.')}
           </p>
           <div className="mt-10 grid grid-cols-3 gap-5">
             {[
-              [ShieldCheck, 'Accès sécurisé', 'Vos données sont protégées'],
-              [Clock, 'Suivi en temps réel', 'Une gestion efficace de vos opérations'],
-              [Users, 'Une équipe engagée', 'Pour votre bien-être'],
+              [ShieldCheck, t('Accès sécurisé'), t('Vos données sont protégées')],
+              [Clock, t('Suivi en temps réel'), t('Une gestion efficace de vos opérations')],
+              [Users, t('Une équipe engagée'), t('Pour votre bien-être')],
             ].map(([Icon, t, d]: any) => (
               <div key={t}>
                 <div className="mb-3 grid h-12 w-12 place-items-center rounded-xl bg-[#3ddc97]/15 text-[#3ddc97]">
@@ -78,11 +79,20 @@ function Shell({
             alt=""
             className="mb-5 h-14 w-14 rounded-full bg-white lg:hidden"
           />
-          <p className="text-sm text-white/70">{subtitle}</p>
-          <h1 className="mb-6 mt-1 text-3xl font-extrabold tracking-tight text-white">{title}</h1>
+          <button
+            type="button"
+            className="absolute right-5 top-5 inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-2.5 py-1.5 text-xs font-bold text-white/80 hover:bg-white/10"
+            onClick={toggleLanguage}
+            aria-label={t(language === 'fr' ? 'Passer en anglais' : 'Passer en français')}
+            title={t(language === 'fr' ? 'Passer en anglais' : 'Passer en français')}
+          >
+            {language.toUpperCase()}
+          </button>
+          <p className="text-sm text-white/70">{t(subtitle)}</p>
+          <h1 className="mb-6 mt-1 text-3xl font-extrabold tracking-tight text-white">{t(title)}</h1>
           {children}
           <p className="mt-8 text-center text-xs text-white/40">
-            {CENTER.name} · Version {APP_VERSION}
+            {CENTER.name} · {t('Version')} {APP_VERSION}
           </p>
         </div>
       </div>
@@ -106,13 +116,14 @@ const FieldD = ({
   <div className="space-y-2">
     <label className="flex items-center gap-2 text-sm font-semibold text-white">
       <Icon className="h-4 w-4" />
-      {l}
+      {t(l)}
     </label>
     {children}
   </div>
 );
 
 export function LoginPage() {
+  useLanguage();
   const { user, login } = useAuth();
   const nav = useNavigate();
   const loc = useLocation() as { state?: { from?: string } };
@@ -150,7 +161,7 @@ export function LoginPage() {
   if (user) return <Navigate to={loc.state?.from || '/'} replace />;
   return (
     <Shell title="Medicare Hospital" subtitle="Bienvenue sur">
-      <p className="-mt-4 mb-6 text-sm text-white/70">Connectez-vous à votre espace de travail</p>
+      <p className="-mt-4 mb-6 text-sm text-white/70">{t('Connectez-vous à votre espace de travail')}</p>
       <form
         className="space-y-5"
         autoComplete="off"
@@ -181,7 +192,7 @@ export function LoginPage() {
             ref={emailRef}
             className={inputCls}
             type="email"
-            placeholder="exemple@domaine.com"
+            placeholder={t('exemple@domaine.com')}
             autoComplete="off"
             required
             value={email}
@@ -195,7 +206,7 @@ export function LoginPage() {
               ref={passRef}
               className={inputCls + ' pr-12'}
               type={show ? 'text' : 'password'}
-              placeholder="Votre mot de passe"
+              placeholder={t('Votre mot de passe')}
               autoComplete="new-password"
               required
               value={password}
@@ -206,7 +217,7 @@ export function LoginPage() {
               type="button"
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-white/50 hover:text-white"
               onClick={() => setShow(!show)}
-              aria-label="Afficher le mot de passe"
+              aria-label={t('Afficher le mot de passe')}
             >
               {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
@@ -219,10 +230,10 @@ export function LoginPage() {
               className="h-4 w-4 accent-[#2fc58a]"
               onChange={(e) => setRemember(e.target.checked)}
             />
-            Se souvenir de moi
+            {t('Se souvenir de moi')}
           </label>
           <Link to="/forgot" className="font-semibold text-[#3ddc97] hover:underline">
-            Mot de passe oublié ?
+            {t('Mot de passe oublié ?')}
           </Link>
         </div>
         {error && (
@@ -230,11 +241,11 @@ export function LoginPage() {
             className="rounded-xl bg-red-500/15 px-4 py-3 text-sm font-medium text-red-300"
             role="alert"
           >
-            {error}
+            {t(error)}
           </p>
         )}
         <button className={primaryBtn} disabled={busy}>
-          {busy ? <Spinner /> : <LogIn className="h-5 w-5" />}Se connecter
+          {busy ? <Spinner /> : <LogIn className="h-5 w-5" />}{t('Se connecter')}
         </button>
       </form>
     </Shell>
@@ -242,6 +253,7 @@ export function LoginPage() {
 }
 
 export function ForgotPage() {
+  useLanguage();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -249,7 +261,7 @@ export function ForgotPage() {
     <Shell title="Mot de passe oublié" subtitle="Nous vous envoyons un lien de réinitialisation">
       {sent ? (
         <p className="rounded-lg bg-[#2fc58a]/15 p-3 text-sm text-[#7ff0c0]">
-          Si cet email existe, un lien vient d'être envoyé.
+          {t("Si cet email existe, un lien vient d'être envoyé.")}
         </p>
       ) : (
         <form
@@ -276,13 +288,13 @@ export function ForgotPage() {
             />
           </FieldD>
           <button className={primaryBtn} disabled={busy}>
-            {busy && <Spinner />}Envoyer le lien
+            {busy && <Spinner />}{t('Envoyer le lien')}
           </button>
         </form>
       )}
       <div className="mt-4 text-center">
         <Link to="/login" className="text-sm font-medium text-[#3ddc97] hover:underline">
-          Retour à la connexion
+          {t('Retour à la connexion')}
         </Link>
       </div>
     </Shell>
@@ -290,6 +302,7 @@ export function ForgotPage() {
 }
 
 export function ResetPage() {
+  useLanguage();
   const [sp] = useSearchParams();
   const [pw, setPw] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
@@ -314,7 +327,7 @@ export function ResetPage() {
                 token: sp.get('token'),
                 new_password: pw,
               });
-              setMsg({ ok: true, t: 'Mot de passe modifié. Vous pouvez vous connecter.' });
+              setMsg({ ok: true, t: t('Mot de passe modifié. Vous pouvez vous connecter.') });
             } catch (err) {
               const f = apiError(err);
               setMsg({ ok: false, t: Object.values(f.fields)[0] || f.message });
@@ -340,13 +353,13 @@ export function ResetPage() {
             </p>
           )}
           <button className={primaryBtn} disabled={busy}>
-            {busy && <Spinner />}Enregistrer
+            {busy && <Spinner />}{t('Enregistrer')}
           </button>
         </form>
       )}
       <div className="mt-4 text-center">
         <Link to="/login" className="text-sm font-medium text-[#3ddc97] hover:underline">
-          Aller à la connexion
+          {t('Aller à la connexion')}
         </Link>
       </div>
     </Shell>

@@ -12,6 +12,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.test import APITestCase
 
 from audit.models import AuditLog
+from audit.serializers import AuditLogSerializer
 from audit.services import log_user_action
 
 User = get_user_model()
@@ -167,6 +168,42 @@ class AccountHierarchyTests(APITestCase):
         for log in AuditLog.objects.filter(record_id=target.pk):
             self.assertEqual(log.user_id, self.root.pk)
             self.assertEqual(log.table_name, "users.User")
+
+    def test_self_profile_update_audit_targets_own_account(self):
+        self.client.force_authenticate(self.doctor)
+        response = self.client.patch(
+            "/api/auth/profile/update/",
+            {"first_name": "Docteur"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        log = AuditLog.objects.get(
+            user=self.doctor,
+            record_id=self.doctor.pk,
+            action=AuditLog.Action.UPDATE,
+        )
+        self.assertEqual(
+            AuditLogSerializer(log).data["target_label"],
+            "son compte",
+        )
+
+        self.client.force_authenticate(self.root)
+        admin_response = self.client.patch(
+            f"/api/auth/users/{self.doctor.pk}/",
+            {"first_name": "Docteur modifié"},
+            format="json",
+        )
+        self.assertEqual(admin_response.status_code, 200)
+        admin_log = AuditLog.objects.get(
+            user=self.root,
+            record_id=self.doctor.pk,
+            action=AuditLog.Action.UPDATE,
+        )
+        self.assertEqual(
+            AuditLogSerializer(admin_log).data["target_label"],
+            "le compte Docteur modifié",
+        )
 
     def test_audit_is_immutable_via_orm(self):
         log = log_user_action(

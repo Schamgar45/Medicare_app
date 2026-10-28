@@ -79,6 +79,15 @@ class AuditLogSerializer(serializers.ModelSerializer):
 
     def get_target_label(self, obj) -> str:
         """Cible de l'action : « le compte Jean Mukendi » plutôt que users.User #7."""
+        if (
+            obj.table_name == "users.User"
+            and obj.action == "UPDATE"
+            and obj.user_id is not None
+            and obj.record_id is not None
+            and obj.user_id == obj.record_id
+        ):
+            return "son compte"
+
         snap = self._snapshot(obj)
         if obj.table_name == "users.User":
             name = " ".join(

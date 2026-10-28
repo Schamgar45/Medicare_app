@@ -7,9 +7,10 @@ import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import { apiError } from '@/lib/api';
 import { Ban, Plus, Power } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Role, Service, Specialty, User } from '@/lib/types';
 import { fmtDateTime, label, money, opts } from '@/lib/format';
+import { t, useLanguage } from '@/lib/i18n';
 
 // Seul le superuser (createsuperuser) peut créer/promouvoir un ADMIN.
 const ALL_ROLES: Role[] = ['ADMIN', 'DOCTOR', 'RECEPTIONIST', 'LABORANT', 'PHARMACIST', 'CASHIER'];
@@ -36,8 +37,8 @@ function UserActions({ u }: { u: User }) {
   return active ? (
     <button
       className="rounded-md p-2 text-bad hover:bg-bad/10"
-      title="Désactiver le compte"
-      aria-label="Désactiver"
+      title={t('Désactiver le compte')}
+      aria-label={t('Désactiver')}
       onClick={toggle}
     >
       <Ban className="h-4 w-4" />
@@ -45,8 +46,8 @@ function UserActions({ u }: { u: User }) {
   ) : (
     <button
       className="rounded-md p-2 text-ok hover:bg-ok/10"
-      title="Réactiver le compte"
-      aria-label="Réactiver"
+      title={t('Réactiver le compte')}
+      aria-label={t('Réactiver')}
       onClick={toggle}
     >
       <Power className="h-4 w-4" />
@@ -258,7 +259,7 @@ function AuditList() {
       header: 'Journal',
       render: (a) => (
         <span>
-          <span className="font-semibold">{a.actor}</span> {a.action_label} {a.target_label}
+          <span className="font-semibold">{a.actor}</span> {t(a.action_label)} {t(a.target_label)}
         </span>
       ),
     },
@@ -267,7 +268,7 @@ function AuditList() {
       header: 'Détails',
       render: (a) =>
         a.changes.length
-          ? a.changes.map((c) => `${c.field} : ${label(c.old)} → ${label(c.new)}`).join(' · ')
+          ? a.changes.map((c) => `${t(c.field)} : ${label(c.old)} → ${label(c.new)}`).join(' · ')
           : '—',
       hideOnMobile: true,
     },
@@ -278,7 +279,7 @@ function AuditList() {
       <div className="border-b p-3">
         <select
           className="input w-auto min-w-[180px]"
-          aria-label="Filtrer par action"
+          aria-label={t('Filtrer par action')}
           value={action}
           onChange={(e) => {
             setAction(e.target.value);
@@ -287,7 +288,7 @@ function AuditList() {
         >
           {AUDIT_FILTERS.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {t(o.label)}
             </option>
           ))}
         </select>
@@ -297,7 +298,7 @@ function AuditList() {
         rows={q.data?.results}
         loading={q.isLoading}
         error={q.isError}
-        mobileTitle={(a) => `${a.actor} ${a.action_label}`}
+        mobileTitle={(a) => `${a.actor} ${t(a.action_label)}`}
       />
       <Pagination page={page} count={q.data?.count ?? 0} size={20} onPage={setPage} />
     </div>
@@ -305,30 +306,50 @@ function AuditList() {
 }
 
 export function AdminPage() {
+  useLanguage();
   const { user, isSuperuser, canManage } = useAuth();
   const [openCreateUser, setOpenCreateUser] = useState<(() => void) | null>(null);
+  const [openCreateService, setOpenCreateService] = useState<(() => void) | null>(null);
+  const [openCreateSpecialty, setOpenCreateSpecialty] = useState<(() => void) | null>(null);
   const registerCreateUser = useCallback(
     (open: (() => void) | null) => setOpenCreateUser(() => open),
     [],
   );
+  const registerCreateService = useCallback(
+    (open: (() => void) | null) => setOpenCreateService(() => open),
+    [],
+  );
+  const registerCreateSpecialty = useCallback(
+    (open: (() => void) | null) => setOpenCreateSpecialty(() => open),
+    [],
+  );
   // Seul le superuser peut attribuer le rôle ADMIN ; un ADMIN classique crée/édite
   // uniquement les profils staff (doctor, réception, labo, pharmacie, caisse).
-  const roleOptions = opts(isSuperuser ? ALL_ROLES : STAFF_ROLES);
-  const userFields: FieldDef[] = userCfg.fields.map((f) =>
-    f.name === 'role' ? { ...f, options: roleOptions } : f,
+  const roleOptions = useMemo(() => opts(isSuperuser ? ALL_ROLES : STAFF_ROLES), [isSuperuser]);
+  const userFields: FieldDef[] = useMemo(
+    () =>
+      userCfg.fields.map((f) =>
+        f.name === 'role' ? { ...f, options: roleOptions } : f,
+      ),
+    [roleOptions],
   );
   return (
     <>
       <PageHeader title="Administration" subtitle="Comptes, départements et journal d'audit" />
       <Tabs
-        actions={(activeTabId) =>
-          activeTabId === 'users' && openCreateUser ? (
-            <button className="btn btn-primary" onClick={openCreateUser}>
+        actions={(activeTabId) => {
+          const createAction = {
+            users: { label: 'Nouvel utilisateur', onClick: openCreateUser },
+            services: { label: 'Nouveau département', onClick: openCreateService },
+            spec: { label: 'Nouvelle spécialité', onClick: openCreateSpecialty },
+          }[activeTabId];
+          return createAction?.onClick ? (
+            <button className="btn btn-primary" onClick={createAction.onClick}>
               <Plus className="h-4 w-4" />
-              Nouvel utilisateur
+              {t(createAction.label)}
             </button>
-          ) : null
-        }
+          ) : null;
+        }}
         tabs={[
           {
             id: 'users',
@@ -351,12 +372,22 @@ export function AdminPage() {
           {
             id: 'services',
             label: 'Départements',
-            node: <ResourcePage cfg={{ ...serviceCfg, embedded: true }} />,
+            node: (
+              <ResourcePage
+                cfg={{ ...serviceCfg, embedded: true, hideCreateButton: true }}
+                onCreateActionReady={registerCreateService}
+              />
+            ),
           },
           {
             id: 'spec',
             label: 'Spécialités',
-            node: <ResourcePage cfg={{ ...specialtyCfg, embedded: true }} />,
+            node: (
+              <ResourcePage
+                cfg={{ ...specialtyCfg, embedded: true, hideCreateButton: true }}
+                onCreateActionReady={registerCreateSpecialty}
+              />
+            ),
           },
           { id: 'audit', label: "Journal d'audit", node: <AuditList /> },
         ]}

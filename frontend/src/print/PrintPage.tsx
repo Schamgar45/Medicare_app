@@ -22,6 +22,7 @@ import type {
   Service,
 } from '@/lib/types';
 import { Skeleton } from '@/components/ui';
+import { t, useLanguage } from '@/lib/i18n';
 
 const PATHS: Record<string, string> = {
   invoice: 'invoices',
@@ -67,6 +68,7 @@ function useBuild(type: string, id?: string): { doc?: DocDef; loading: boolean; 
 }
 
 export default function PrintPage() {
+  useLanguage();
   const { type = '', id } = useParams();
   const nav = useNavigate();
   const { doc, loading, error } = useBuild(type, id);
@@ -97,7 +99,7 @@ export default function PrintPage() {
       <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b bg-surface px-4 py-2.5 print:hidden">
         <button className="btn btn-ghost btn-sm" onClick={() => nav(-1)}>
           <ArrowLeft className="h-4 w-4" />
-          Retour
+          {t('Retour')}
         </button>
         <div className="flex-1" />
         {size === 'A5L' && (
@@ -108,24 +110,24 @@ export default function PrintPage() {
               checked={two}
               onChange={(e) => setTwo(e.target.checked)}
             />
-            2 par feuille A4
+            {t('2 par feuille A4')}
           </label>
         )}
         {size && (
           <span className="hidden text-xs text-sub sm:inline">
-            Format :{' '}
+            {t('Format')}:{' '}
             {size === 'A4P' ? 'A4' : size === 'A5L' ? 'A5' : size === 'A6L' ? 'A6' : 'Bandeau'}
           </span>
         )}
         <button className="btn btn-primary btn-sm" disabled={!doc} onClick={() => window.print()}>
           <Printer className="h-4 w-4" />
-          Imprimer
+          {t('Imprimer')}
         </button>
       </div>
 
       <div className="flex justify-center p-4 print:p-0">
         {loading && <Skeleton className="h-[500px] w-full max-w-3xl" />}
-        {error && !loading && <p className="card p-10 text-sm text-sub">Document introuvable.</p>}
+        {error && !loading && <p className="card p-10 text-sm text-sub">{t('Document introuvable.')}</p>}
         {doc && (
           <div
             className="print-area origin-top shadow-card print:shadow-none"

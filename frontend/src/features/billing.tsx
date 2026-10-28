@@ -19,6 +19,7 @@ import { useToast } from '@/lib/toast';
 import { useOne, useRemove, useSave } from '@/lib/queries';
 import type { BillingItem, Invoice, InvoiceItem, Payment } from '@/lib/types';
 import { fmtDate, fmtDateTime, fullName, money, opts } from '@/lib/format';
+import { t, useLanguage } from '@/lib/i18n';
 import { Tabs, patientRel, serviceRel } from './common';
 
 const STAFF = ['RECEPTIONIST', 'CASHIER'] as const;
@@ -130,7 +131,7 @@ const paymentCfg: ResourceConfig<Payment> = {
         <Link
           to={`/print/receipt/${p.id}`}
           className="text-brand"
-          aria-label="Imprimer le reçu"
+          aria-label={t('Imprimer le reçu')}
           onClick={(e) => e.stopPropagation()}
         >
           <Printer className="h-4 w-4" />
@@ -178,6 +179,7 @@ const itemCfg: ResourceConfig<BillingItem> = {
 };
 
 export function BillingPage() {
+  useLanguage();
   const { can } = useAuth();
   return (
     <>
@@ -196,6 +198,7 @@ export function BillingPage() {
 }
 
 export function InvoiceDetailPage() {
+  useLanguage();
   const { id } = useParams();
   const nav = useNavigate();
   const toast = useToast();
@@ -227,7 +230,7 @@ export function InvoiceDetailPage() {
 
   if (q.isLoading) return <Skeleton className="h-64" />;
   const inv = q.data;
-  if (!inv) return <div className="card p-10 text-center text-sub">Facture introuvable.</div>;
+  if (!inv) return <div className="card p-10 text-center text-sub">{t('Facture introuvable.')}</div>;
   const canEdit = can(...STAFF) && inv.status !== 'CANCELLED';
 
   const itemCols: Column<InvoiceItem>[] = [
@@ -246,7 +249,7 @@ export function InvoiceDetailPage() {
             header: '',
             className: 'w-10',
             render: (i: InvoiceItem) => (
-              <button className="p-1.5 text-bad" aria-label="Retirer" onClick={() => setDel(i)}>
+              <button className="p-1.5 text-bad" aria-label={t('Retirer')} onClick={() => setDel(i)}>
                 <Trash2 className="h-4 w-4" />
               </button>
             ),
@@ -372,21 +375,21 @@ export function InvoiceDetailPage() {
                 </div>
                 <div className="card space-y-3 p-5">
                   <div className="flex justify-between text-sm">
-                    <span className="text-sub">Sous-total</span>
+                    <span className="text-sub">{t('Sous-total')}</span>
                     <span className="tabular-nums">{money(inv.subtotal)}</span>
                   </div>
                   {Number(inv.discount) > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-sub">Remise</span>
+                      <span className="text-sub">{t('Remise')}</span>
                       <span className="tabular-nums">− {money(inv.discount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between border-t pt-3 font-bold">
-                    <span>Total</span>
+                    <span>{t('Total')}</span>
                     <span className="tabular-nums">{money(inv.total)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-sub">Déjà payé</span>
+                    <span className="text-sub">{t('Déjà payé')}</span>
                     <span className="tabular-nums text-ok">{money(inv.amount_paid)}</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-sunken">
@@ -396,7 +399,7 @@ export function InvoiceDetailPage() {
                     />
                   </div>
                   <div className="flex justify-between text-lg font-extrabold">
-                    <span>Reste à payer</span>
+                    <span>{t('Reste à payer')}</span>
                     <span className={`tabular-nums ${bal > 0 ? 'text-bad' : 'text-ok'}`}>
                       {money(inv.balance)}
                     </span>
@@ -408,11 +411,11 @@ export function InvoiceDetailPage() {
         })()}
         <section className="card overflow-hidden">
           <div className="flex items-center justify-between border-b p-4">
-            <h2 className="font-bold">Lignes de la facture</h2>
+            <h2 className="font-bold">{t('Lignes de la facture')}</h2>
             {canEdit && (
               <button className="btn btn-primary btn-sm" onClick={() => setAddItem(true)}>
                 <Plus className="h-4 w-4" />
-                Ajouter
+                {t('Ajouter')}
               </button>
             )}
           </div>
@@ -421,14 +424,14 @@ export function InvoiceDetailPage() {
             rows={inv.items}
             empty={
               <div className="flex flex-col items-center gap-3 p-10 text-center">
-                <p className="font-semibold">Aucune ligne pour le moment</p>
+                <p className="font-semibold">{t('Aucune ligne pour le moment')}</p>
                 <p className="text-sm text-sub">
-                  Ajoutez les actes ou produits à facturer pour obtenir le total.
+                  {t('Ajoutez les actes ou produits à facturer pour obtenir le total.')}
                 </p>
                 {canEdit && (
                   <button className="btn btn-primary" onClick={() => setAddItem(true)}>
                     <Plus className="h-4 w-4" />
-                    Ajouter une ligne
+                    {t('Ajouter une ligne')}
                   </button>
                 )}
               </div>
@@ -437,13 +440,13 @@ export function InvoiceDetailPage() {
         </section>
         <section className="card overflow-hidden">
           <div className="border-b p-4">
-            <h2 className="font-bold">Paiements</h2>
+            <h2 className="font-bold">{t('Paiements')}</h2>
           </div>
           <DataTable
             columns={payCols}
             rows={payList ?? []}
             loading={payList === null}
-            empty={<p className="p-6 text-center text-sm text-mute">Aucun paiement enregistré.</p>}
+            empty={<p className="p-6 text-center text-sm text-mute">{t('Aucun paiement enregistré.')}</p>}
           />
         </section>
       </div>

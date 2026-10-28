@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 import { useList, useOne, Params } from '@/lib/queries';
 import { Spinner } from './ui';
+import { t } from '@/lib/i18n';
 
 export interface Relation {
   path: string;
@@ -54,7 +55,7 @@ export function RelationSelect({
         aria-expanded={open}
       >
         <span className={value ? 'truncate' : 'truncate text-mute'}>
-          {value ? (current.data ? relation.label(current.data) : 'Chargement…') : placeholder}
+          {value ? (current.data ? relation.label(current.data) : t('Chargement…')) : t(placeholder)}
         </span>
         <span className="flex items-center gap-1">
           {value && !disabled ? (
@@ -74,7 +75,7 @@ export function RelationSelect({
           <input
             autoFocus
             className="input mb-1.5 h-9"
-            placeholder="Rechercher…"
+            placeholder={t('Rechercher…')}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -100,7 +101,7 @@ export function RelationSelect({
               </li>
             ))}
             {list.data && !list.data.results.length && (
-              <li className="p-3 text-center text-sm text-mute">Aucun résultat</li>
+              <li className="p-3 text-center text-sm text-mute">{t('Aucun résultat')}</li>
             )}
           </ul>
         </div>

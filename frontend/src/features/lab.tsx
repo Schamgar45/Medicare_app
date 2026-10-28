@@ -13,6 +13,7 @@ import { useToast } from '@/lib/toast';
 import { apiError } from '@/lib/api';
 import type { LabRequest, LabResult, LabTest } from '@/lib/types';
 import { fmtDate, fmtDateTime, fullName, money, opts } from '@/lib/format';
+import { t, useLanguage } from '@/lib/i18n';
 
 const testCfg: ResourceConfig<LabTest> = {
   path: 'lab/tests',
@@ -68,25 +69,25 @@ function RequestActions({ r, onResult }: { r: LabRequest; onResult: (r: LabReque
       {lab && r.status === 'REQUESTED' && (
         <button className="btn btn-ghost btn-sm" onClick={() => step('SAMPLE_COLLECTED')}>
           <TestTube className="h-3.5 w-3.5" />
-          Prélevé
+          {t('Prélevé')}
         </button>
       )}
       {lab && r.status === 'SAMPLE_COLLECTED' && (
         <button className="btn btn-ghost btn-sm" onClick={() => step('IN_PROGRESS')}>
           <Play className="h-3.5 w-3.5" />
-          Démarrer
+          {t('Démarrer')}
         </button>
       )}
       {lab && open && (
         <button className="btn btn-primary btn-sm" onClick={() => onResult(r)}>
           <FlaskConical className="h-3.5 w-3.5" />
-          Résultat
+          {t('Résultat')}
         </button>
       )}
       {(lab || user?.role === 'DOCTOR') && open && (
         <button
           className="rounded-md p-1.5 text-bad hover:bg-bad/10"
-          aria-label="Annuler la demande"
+          aria-label={t('Annuler la demande')}
           onClick={() => step('CANCELLED')}
         >
           <X className="h-4 w-4" />
@@ -136,7 +137,7 @@ function Requests() {
     ],
     extraHeader: can('DOCTOR') ? (
       <button className="btn btn-primary" onClick={() => setCreating(true)}>
-        Nouvelle demande
+        {t('Nouvelle demande')}
       </button>
     ) : undefined,
     columns: [
@@ -286,7 +287,7 @@ function Results() {
             par {r.validated_by_name}
           </span>
         ) : (
-          <Badge tone="warn">À valider</Badge>
+          <Badge tone="warn">{t('À valider')}</Badge>
         ),
     },
     {
@@ -297,7 +298,7 @@ function Results() {
         r.validated_at ? (
           <Link to={`/print/lab/${r.id}`} className="btn btn-ghost btn-sm">
             <Printer className="h-3.5 w-3.5" />
-            Imprimer
+            {t('Imprimer')}
           </Link>
         ) : can('LABORANT') ? (
           <button
@@ -313,7 +314,7 @@ function Results() {
             }}
           >
             <Check className="h-3.5 w-3.5" />
-            Valider
+            {t('Valider')}
           </button>
         ) : null,
     },
@@ -323,16 +324,16 @@ function Results() {
       <div className="border-b p-3">
         <select
           className="input w-auto min-w-[180px]"
-          aria-label="Statut"
+          aria-label={t('Statut')}
           value={status}
           onChange={(e) => {
             setStatus(e.target.value);
             setPage(1);
           }}
         >
-          <option value="">Tous les résultats</option>
-          <option value="RESULT_AVAILABLE">À valider</option>
-          <option value="VALIDATED">Validés</option>
+          <option value="">{t('Tous les résultats')}</option>
+          <option value="RESULT_AVAILABLE">{t('À valider')}</option>
+          <option value="VALIDATED">{t('Validés')}</option>
         </select>
       </div>
       <DataTable
@@ -349,6 +350,7 @@ function Results() {
 }
 
 export function LabPage() {
+  useLanguage();
   const { can } = useAuth();
   return (
     <>

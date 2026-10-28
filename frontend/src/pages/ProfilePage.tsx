@@ -17,6 +17,7 @@ import clsx from 'clsx';
 import { api, apiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { fullName, fmtDate, initials, label, PHONE_MESSAGE, isValidPhone } from '@/lib/format';
+import { t, useLanguage } from '@/lib/i18n';
 import { Badge, Field, PageHeader, Spinner } from '@/components/ui';
 import type { User } from '@/lib/types';
 
@@ -54,7 +55,7 @@ function PasswordInput({
         type="button"
         onClick={() => setShow((s) => !s)}
         disabled={disabled}
-        aria-label={show ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+        aria-label={t(show ? 'Masquer le mot de passe' : 'Afficher le mot de passe')}
         className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-mute transition hover:bg-sunken hover:text-ink disabled:opacity-50"
       >
         {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -94,13 +95,14 @@ function StrengthMeter({ value }: { value: string }) {
         ))}
       </div>
       <span className="text-xs text-mute">
-        Robustesse : <span className="font-semibold text-sub">{STRENGTH_LABELS[score]}</span>
+        {t('Robustesse')} : <span className="font-semibold text-sub">{t(STRENGTH_LABELS[score])}</span>
       </span>
     </div>
   );
 }
 
 export function ProfilePage() {
+  useLanguage();
   const { user, refreshUser, logout } = useAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -244,7 +246,7 @@ export function ProfilePage() {
               type="button"
               onClick={() => fileRef.current?.click()}
               className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full border bg-surface text-brand shadow hover:bg-sunken"
-              aria-label="Modifier la photo"
+              aria-label={t('Modifier la photo')}
             >
               <Camera className="h-4 w-4" />
             </button>
@@ -262,10 +264,10 @@ export function ProfilePage() {
             <p className="text-sm text-sub">@{user.username}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Badge tone="info">{label(user.role)}</Badge>
-              {user.is_superuser && <Badge tone="bad">Super-admin</Badge>}
+              {user.is_superuser && <Badge tone="bad">{t('Super-admin')}</Badge>}
               <Badge tone={user.status === 'ACTIVE' ? 'ok' : 'mute'}>{label(user.status)}</Badge>
             </div>
-            <p className="mt-2 text-xs text-mute">Membre depuis le {fmtDate(user.created_at)}</p>
+            <p className="mt-2 text-xs text-mute">{t('Membre depuis le')} {fmtDate(user.created_at)}</p>
           </div>
 
           <div className="flex gap-2 mt-4 sm:mt-0 sm:ml-auto">
@@ -273,9 +275,9 @@ export function ProfilePage() {
               type="button"
               className="btn btn-ghost border-brand text-brand hover:bg-brand/5"
               onClick={() => fileRef.current?.click()}
-              aria-label="Modifier la photo"
+              aria-label={t('Modifier la photo')}
             >
-              <Camera className="h-4 w-4" /> Modifier la photo
+              <Camera className="h-4 w-4" /> {t('Modifier la photo')}
             </button>
             {user.avatar && !preview && (
               <button
@@ -283,14 +285,14 @@ export function ProfilePage() {
                 className="btn btn-ghost border-bad text-bad hover:bg-bad/5"
                 onClick={() => clearAvatarMut.mutate()}
                 disabled={clearAvatarMut.isPending}
-                aria-label="Supprimer la photo"
+                aria-label={t('Supprimer la photo')}
               >
-                <Trash2 className="h-4 w-4" /> Supprimer la photo
+                <Trash2 className="h-4 w-4" /> {t('Supprimer la photo')}
               </button>
             )}
           </div>
           {preview && (
-            <p className="text-xs text-mute mt-4 sm:mt-0">Aperçu — enregistrez pour appliquer.</p>
+            <p className="text-xs text-mute mt-4 sm:mt-0">{t('Aperçu — enregistrez pour appliquer.')}</p>
           )}
         </div>
       </div>
@@ -307,7 +309,7 @@ export function ProfilePage() {
         >
           <h2 className="mb-4 flex items-center gap-2 text-base font-bold">
             <UserIcon className="h-5 w-5 text-brand" />
-            Informations personnelles
+            {t('Informations personnelles')}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Nom d'utilisateur">
@@ -367,7 +369,7 @@ export function ProfilePage() {
               >
                 {GENDER_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
-                    {o.label}
+                    {t(o.label)}
                   </option>
                 ))}
               </select>
@@ -397,7 +399,7 @@ export function ProfilePage() {
               )}
               role="status"
             >
-              {infoMsg.text}
+              {t(infoMsg.text)}
             </p>
           )}
 
@@ -407,7 +409,7 @@ export function ProfilePage() {
               className="btn btn-primary"
               disabled={infoMut.isPending || Object.keys(infoErrors).length > 0}
             >
-              {infoMut.isPending ? <Spinner /> : 'Enregistrer les modifications'}
+              {infoMut.isPending ? <Spinner /> : t('Enregistrer les modifications')}
             </button>
           </div>
         </form>
@@ -423,7 +425,7 @@ export function ProfilePage() {
         >
           <h2 className="mb-4 flex items-center gap-2 text-base font-bold">
             <KeyRound className="h-5 w-5 text-brand" />
-            Sécurité
+            {t('Sécurité')}
           </h2>
 
           <div
@@ -435,8 +437,8 @@ export function ProfilePage() {
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
               {pwReady.allowed
-                ? "Choisissez un mot de passe sûr d'au moins 8 caractères. Vous pourrez le modifier à nouveau au plus tôt dans 7 jours."
-                : `Pour des raisons de sécurité, un seul changement de mot de passe est autorisé par semaine. Nouveau changement possible à partir du ${fmtDate(pwReady.nextDate?.toISOString())}.`}
+                ? t("Choisissez un mot de passe sûr d'au moins 8 caractères. Vous pourrez le modifier à nouveau au plus tôt dans 7 jours.")
+                : `${t('Pour des raisons de sécurité, un seul changement de mot de passe est autorisé par semaine. Nouveau changement possible à partir du')} ${fmtDate(pwReady.nextDate?.toISOString())}.`}
             </p>
           </div>
 
@@ -480,7 +482,7 @@ export function ProfilePage() {
               )}
               role="status"
             >
-              {pwMsg.text}
+              {t(pwMsg.text)}
             </p>
           )}
 
@@ -490,7 +492,7 @@ export function ProfilePage() {
               className="btn btn-primary"
               disabled={pwMut.isPending || !pwReady.allowed || Object.keys(pwErrors).length > 0}
             >
-              {pwMut.isPending ? <Spinner /> : 'Changer le mot de passe'}
+              {pwMut.isPending ? <Spinner /> : t('Changer le mot de passe')}
             </button>
           </div>
         </form>
@@ -498,8 +500,8 @@ export function ProfilePage() {
 
       <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
         <div>
-          <p className="font-semibold">Session</p>
-          <p className="text-sm text-sub">Déconnectez-vous de cet appareil en toute sécurité.</p>
+          <p className="font-semibold">{t('Session')}</p>
+          <p className="text-sm text-sub">{t('Déconnectez-vous de cet appareil en toute sécurité.')}</p>
         </div>
         <button
           className="btn btn-ghost"
@@ -508,7 +510,7 @@ export function ProfilePage() {
             nav('/login');
           }}
         >
-          <LogOut className="h-4 w-4" /> Se déconnecter
+          <LogOut className="h-4 w-4" /> {t('Se déconnecter')}
         </button>
       </div>
     </div>

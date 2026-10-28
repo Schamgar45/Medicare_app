@@ -8,6 +8,7 @@ import { RelationSelect, Relation } from './RelationSelect';
 import { apiError } from '@/lib/api';
 import { isValidPhone, normalizePhone, PHONE_MESSAGE, todayISO } from '@/lib/format';
 import { useToast } from '@/lib/toast';
+import { t, useLanguage } from '@/lib/i18n';
 
 const STEP_CHANGE_GUARD_MS = 500;
 
@@ -53,24 +54,24 @@ function schemaFor(fields: FieldDef[]) {
       shape[f.name] = f.required
         ? z
             .string()
-            .min(1, 'Champ obligatoire')
+            .min(1, t('Champ obligatoire'))
             .refine((v) => isValidPhone(v), PHONE_MESSAGE)
         : withPhone;
     } else if (f.type === 'date' && (f.maxToday || f.max)) {
       const limit = f.maxToday ? todayISO() : f.max!;
-      const futureMsg = 'La date ne peut pas être dans le futur.';
+      const futureMsg = t('La date ne peut pas être dans le futur.');
       // Vide ("" / null / undefined) autorisé pour un champ non requis, sinon comparaison ISO.
       const notFuture = (v: unknown) => v == null || v === '' || String(v) <= limit;
       shape[f.name] = f.required
         ? z
             .any()
-            .refine((v) => v != null && v !== '', 'Champ obligatoire')
+            .refine((v) => v != null && v !== '', t('Champ obligatoire'))
             .refine(notFuture, futureMsg)
         : z.any().refine(notFuture, futureMsg);
     } else if (f.required)
       shape[f.name] = z
         .any()
-        .refine((v) => v !== '' && v !== null && v !== undefined, 'Champ obligatoire');
+        .refine((v) => v !== '' && v !== null && v !== undefined, t('Champ obligatoire'));
     else shape[f.name] = z.any().optional();
   }
   return z.object(shape).passthrough();
@@ -115,21 +116,23 @@ export function FormModal({
   submitLabel?: string;
   wide?: boolean;
 }) {
+  const { language } = useLanguage();
   const toast = useToast();
   const visible = useMemo(
-    () => fields.filter((f) => (editing ? !f.createOnly : !f.editOnly)),
+    () =>
+      fields.filter((f) => (editing ? !f.createOnly : !f.editOnly)),
     [fields, editing],
   );
   const formSteps = useMemo(() => {
     const steps = new Map<string, FieldDef[]>();
     visible.forEach((field) => {
-      const title = field.formStep ?? 'Informations';
+      const title = t(field.formStep ?? 'Informations');
       const stepFields = steps.get(title) ?? [];
       stepFields.push(field);
       steps.set(title, stepFields);
     });
     return Array.from(steps, ([title, stepFields]) => ({ title, fields: stepFields }));
-  }, [visible]);
+  }, [visible, language]);
   const useWizard = visible.length > 7 && formSteps.length > 1;
   const [activeStep, setActiveStep] = useState(0);
   const lastStepChangeAt = useRef<number | null>(null);
@@ -230,7 +233,7 @@ export function FormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={title}
+      title={t(title)}
       wide={wide}
       footer={
         <>
@@ -239,23 +242,27 @@ export function FormModal({
               <>
                 {activeStep > 0 && (
                   <button type="button" className="btn btn-ghost btn-sm" onClick={() => setActiveStep((step) => step - 1)}>
-                    Retour
+                    {t('Retour')}
                   </button>
                 )}
-                <span>Étape {activeStep + 1} sur {formSteps.length}</span>
+                <span>
+                  {t('Étape {current} sur {total}')
+                    .replace('{current}', String(activeStep + 1))
+                    .replace('{total}', String(formSteps.length))}
+                </span>
               </>
             ) : (
               <button type="button" className="btn btn-ghost" onClick={onClose}>
-                Annuler
+                {t('Annuler')}
               </button>
             )}
           </div>
           {useWizard && activeStep === 0 && (
-            <button type="button" className="btn btn-ghost" onClick={onClose}>Annuler</button>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>{t('Annuler')}</button>
           )}
           {useWizard && activeStep < formSteps.length - 1 ? (
             <button type="button" className="btn btn-primary" onClick={() => void advanceStep()}>
-              Suivant
+              {t('Suivant')}
             </button>
           ) : (
             <button
@@ -265,7 +272,7 @@ export function FormModal({
               disabled={isSubmitting}
             >
               {isSubmitting && <Spinner />}
-              {submitLabel}
+              {t(submitLabel)}
             </button>
           )}
         </>
@@ -273,7 +280,7 @@ export function FormModal({
     >
       <form id="resource-form" onSubmit={handleFormSubmit} className="grid gap-4 sm:grid-cols-2" noValidate>
         {useWizard && (
-          <div className="col-span-full mb-2" aria-label="Progression du formulaire">
+          <div className="col-span-full mb-2" aria-label={t('Progression du formulaire')}>
             <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-sunken" role="progressbar" aria-valuemin={1} aria-valuemax={formSteps.length} aria-valuenow={activeStep + 1}>
               <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${((activeStep + 1) / formSteps.length) * 100}%` }} />
             </div>
@@ -294,17 +301,17 @@ export function FormModal({
           return (
             <Field
               key={f.name}
-              label={f.label}
+              label={t(f.label)}
               required={f.required}
               error={err}
-              hint={f.hint}
+              hint={f.hint ? t(f.hint) : undefined}
               className={span}
             >
               {f.type === 'textarea' ? (
                 <textarea
                   rows={3}
                   className="input"
-                  placeholder={f.placeholder}
+                  placeholder={f.placeholder ? t(f.placeholder) : undefined}
                   {...register(f.name)}
                 />
               ) : f.type === 'select' ? (
@@ -314,7 +321,7 @@ export function FormModal({
                   {!f.required && <option value="">—</option>}
                   {f.options?.map((o) => (
                     <option key={o.value} value={o.value}>
-                      {o.label}
+                      {t(o.label)}
                     </option>
                   ))}
                 </select>
@@ -344,7 +351,7 @@ export function FormModal({
                   className="input"
                   type={f.type}
                   step={f.step}
-                  placeholder={f.placeholder}
+                  placeholder={f.placeholder ? t(f.placeholder) : undefined}
                   max={
                     f.type === 'date' && (f.maxToday || f.max)
                       ? f.maxToday

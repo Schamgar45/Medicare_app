@@ -13,6 +13,7 @@ import {
 import { useList, useOne } from '@/lib/queries';
 import type { Appointment, Consultation, Doctor, Invoice, LabRequest, Patient } from '@/lib/types';
 import { ageOf, fmtDate, fmtDateTime, fmtTime, fullName, label, money, opts } from '@/lib/format';
+import { t, useLanguage } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import { patientRel, doctorRel, serviceRel, specialtyRel, Tabs } from './common';
 
@@ -125,9 +126,13 @@ const patientCfg: ResourceConfig<Patient> = {
   ],
   defaults: { status: 'ACTIVE' },
 };
-export const PatientsPage = () => <ResourcePage cfg={patientCfg} />;
+export const PatientsPage = () => {
+  useLanguage();
+  return <ResourcePage cfg={patientCfg} />;
+};
 
 export function PatientDetailPage() {
+  useLanguage();
   const { id } = useParams();
   const nav = useNavigate();
   const { can } = useAuth();
@@ -166,7 +171,7 @@ export function PatientDetailPage() {
         <Skeleton className="h-48" />
       </div>
     );
-  if (!p.data) return <div className="card p-10 text-center text-sub">Patient introuvable.</div>;
+  if (!p.data) return <div className="card p-10 text-center text-sub">{t('Patient introuvable.')}</div>;
   const d = p.data;
 
   const apptCols: Column<Appointment>[] = [
@@ -240,7 +245,7 @@ export function PatientDetailPage() {
           />
           {can('DOCTOR') && (
             <div>
-              <h3 className="mb-2 text-sm font-bold">Antécédents</h3>
+              <h3 className="mb-2 text-sm font-bold">{t('Antécédents')}</h3>
               {hist.data?.results.length ? (
                 <ul className="space-y-2">
                   {hist.data.results.map((h) => (
@@ -254,7 +259,7 @@ export function PatientDetailPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-mute">Aucun antécédent enregistré.</p>
+                <p className="text-sm text-mute">{t('Aucun antécédent enregistré.')}</p>
               )}
             </div>
           )}
@@ -396,7 +401,10 @@ const doctorCfg: ResourceConfig<Doctor> = {
     { name: 'is_available', label: 'Disponible', type: 'checkbox', formStep: 'Profil professionnel' },
   ],
 };
-export const DoctorsPage = () => <ResourcePage cfg={{ ...doctorCfg, writeRoles: ['ADMIN'] }} />;
+export const DoctorsPage = () => {
+  useLanguage();
+  return <ResourcePage cfg={{ ...doctorCfg, writeRoles: ['ADMIN'] }} />;
+};
 
 /* ---------------- Rendez-vous ---------------- */
 const apptFields = (role?: string) => {
@@ -480,7 +488,10 @@ const apptCfg: ResourceConfig<Appointment> = {
     notes: a.notes,
   }),
 };
-export const AppointmentsPage = () => <ResourcePage cfg={apptCfg} />;
+export const AppointmentsPage = () => {
+  useLanguage();
+  return <ResourcePage cfg={apptCfg} />;
+};
 
 /* ---------------- Consultations ---------------- */
 const consCfg: ResourceConfig<Consultation> = {
@@ -522,7 +533,7 @@ const consCfg: ResourceConfig<Consultation> = {
           to={`/print/consultation/${c.id}`}
           onClick={(e) => e.stopPropagation()}
           className="text-brand"
-          aria-label="Imprimer le compte rendu"
+          aria-label={t('Imprimer le compte rendu')}
         >
           <FileText className="h-4 w-4" />
         </Link>
@@ -602,4 +613,7 @@ const consCfg: ResourceConfig<Consultation> = {
     status: c.status,
   }),
 };
-export const ConsultationsPage = () => <ResourcePage cfg={consCfg} />;
+export const ConsultationsPage = () => {
+  useLanguage();
+  return <ResourcePage cfg={consCfg} />;
+};

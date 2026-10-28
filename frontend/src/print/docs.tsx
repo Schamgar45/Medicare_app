@@ -21,6 +21,7 @@ import type {
   Prescription,
   ServiceBrief,
 } from '@/lib/types';
+import { t } from '@/lib/i18n';
 
 export interface DocDef {
   size: SheetSize;
@@ -29,7 +30,7 @@ export interface DocDef {
 const col = (s?: ServiceBrief | null) => s?.theme_color ?? 'MARINE';
 const sex = (p?: PatientBrief | null) => (p?.gender ? label(p.gender) : '');
 const ageTxt = (p?: PatientBrief | null) =>
-  p?.date_of_birth ? `${ageOf(p.date_of_birth)} ans` : '';
+  p?.date_of_birth ? `${ageOf(p.date_of_birth)} ${t('ans')}` : '';
 
 /* ----- Facture : A5 paysage, A4 portrait si beaucoup de lignes ----- */
 export function invoiceDoc(inv: Invoice): DocDef {
@@ -44,7 +45,7 @@ export function invoiceDoc(inv: Invoice): DocDef {
         number={inv.invoice_number}
         date={fmtDate(inv.invoice_date)}
         stampName={inv.service_detail?.name}
-        signature="Cachet et signature"
+        signature={t('Cachet et signature')}
       >
         <div className="grid grid-cols-2 gap-x-[6mm]">
           <Line k="Patient">{fullName(inv.patient_detail)}</Line>
@@ -55,10 +56,10 @@ export function invoiceDoc(inv: Invoice): DocDef {
         <table className="mt-[3mm] w-full border-collapse" style={{ fontSize: 'inherit' }}>
           <thead>
             <tr className="border-b-[0.4mm] border-[#0C3C7A] text-left text-[#51647A]">
-              <th className="py-[1mm]">Désignation</th>
-              <th className="w-[12mm] text-right">Qté</th>
-              <th className="w-[28mm] text-right">Prix unitaire</th>
-              <th className="w-[30mm] text-right">Total</th>
+              <th className="py-[1mm]">{t('Désignation')}</th>
+              <th className="w-[12mm] text-right">{t('Qté')}</th>
+              <th className="w-[28mm] text-right">{t('Prix unitaire')}</th>
+              <th className="w-[30mm] text-right">{t('Total')}</th>
             </tr>
           </thead>
           <tbody>
@@ -75,20 +76,20 @@ export function invoiceDoc(inv: Invoice): DocDef {
         <div className="ml-auto mt-[2mm] w-[70mm]">
           {Number(inv.discount) > 0 && (
             <div className="flex justify-between text-[#51647A]">
-              <span>Remise</span>
+              <span>{t('Remise')}</span>
               <span>- {money(inv.discount)}</span>
             </div>
           )}
           <div className="flex justify-between border-t-[0.4mm] border-[#0C3C7A] pt-[1mm] text-[1.1em] font-extrabold">
-            <span>TOTAL</span>
+            <span>{t('TOTAL')}</span>
             <span>{money(inv.total)}</span>
           </div>
           <div className="flex justify-between text-[#51647A]">
-            <span>Payé</span>
+            <span>{t('Payé')}</span>
             <span>{money(inv.amount_paid)}</span>
           </div>
           <div className="flex justify-between font-bold">
-            <span>Reste à payer</span>
+            <span>{t('Reste à payer')}</span>
             <span>{money(inv.balance)}</span>
           </div>
         </div>
@@ -109,7 +110,7 @@ export function receiptDoc(p: Payment): DocDef {
         number={p.payment_number}
         date={fmtDateTime(p.payment_date)}
         stampName={p.service_detail?.name}
-        signature={`Encaissé par ${p.received_by_name ?? '—'}`}
+        signature={`${t('Encaissé par')} ${p.received_by_name ?? '—'}`}
       >
         <Line k="Reçu de">{fullName(p.patient_detail)}</Line>
         <Line k="La somme de">
@@ -159,8 +160,8 @@ export function prescriptionDoc(rx: Prescription): DocDef {
                 <b>{i.medication_name}</b>
                 {i.dosage && ` — ${i.dosage}`}
                 {i.frequency && `, ${i.frequency}`}
-                {i.duration && `, pendant ${i.duration}`}
-                {i.quantity ? ` (qté : ${i.quantity})` : ''}
+                {i.duration && `, ${t('pendant')} ${i.duration}`}
+                {i.quantity ? ` (${t('Qté')} : ${i.quantity})` : ''}
                 {i.instructions && <span className="block text-[#51647A]">{i.instructions}</span>}
               </span>
             </li>
@@ -168,7 +169,7 @@ export function prescriptionDoc(rx: Prescription): DocDef {
         </ol>
         {rx.instructions && (
           <p className="mt-[3mm] text-[#33475f]">
-            <b>Conseils :</b> {rx.instructions}
+            <b>{t('Conseils :')}</b> {rx.instructions}
           </p>
         )}
       </Sheet>
@@ -233,7 +234,7 @@ export function labDoc(r: LabResult, dept?: ServiceBrief | null): DocDef {
         number={q.request_number}
         date={fmtDate(r.validated_at)}
         stampName={dept?.name}
-        signature={`Validé par ${r.validated_by_name ?? '—'}`}
+        signature={`${t('Validé par')} ${r.validated_by_name ?? '—'}`}
       >
         <div className="grid grid-cols-2 gap-x-[8mm]">
           <Line k="Patient">{fullName(p)}</Line>
@@ -250,9 +251,9 @@ export function labDoc(r: LabResult, dept?: ServiceBrief | null): DocDef {
         <table className="mt-[8mm] w-full border-collapse">
           <thead>
             <tr className="border-b-[0.4mm] border-[#0C3C7A] text-left text-[#51647A]">
-              <th className="py-[1.5mm]">Examen</th>
-              <th>Résultat</th>
-              <th>Valeurs normales</th>
+              <th className="py-[1.5mm]">{t('Examen')}</th>
+              <th>{t('Résultat')}</th>
+              <th>{t('Valeurs normales')}</th>
             </tr>
           </thead>
           <tbody>
@@ -267,12 +268,12 @@ export function labDoc(r: LabResult, dept?: ServiceBrief | null): DocDef {
         </table>
         {r.comment && (
           <p className="mt-[6mm]">
-            <b>Commentaire :</b> {r.comment}
+            <b>{t('Commentaire :')}</b> {r.comment}
           </p>
         )}
         {q.clinical_information && (
           <p className="mt-[4mm] text-[#51647A]">
-            <b>Renseignements cliniques :</b> {q.clinical_information}
+            <b>{t('Renseignements cliniques :')}</b> {q.clinical_information}
           </p>
         )}
       </Sheet>

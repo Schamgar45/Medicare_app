@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { CENTER } from '@/lib/center';
 import type { ThemeColor } from '@/lib/types';
+import { t } from '@/lib/i18n';
 
 export const COLORS: Record<ThemeColor, { main: string; soft: string }> = {
   MARINE: { main: '#0C3C7A', soft: '#E8EFF8' },
@@ -152,7 +153,7 @@ export function Sheet({
               className="italic text-[#51647A]"
               style={{ fontSize: small ? '2.2mm' : '2.9mm', marginTop: '1mm' }}
             >
-              {CENTER.slogan}
+              {t(CENTER.slogan)}
             </div>
           </div>
         </div>
@@ -178,11 +179,11 @@ export function Sheet({
             fontSize: small ? '3.6mm' : '4.6mm',
           }}
         >
-          {title}
+          {t(title)}
         </div>
         <div className="text-right" style={{ fontSize: small ? '2.8mm' : '3.3mm' }}>
           {number && <div className="font-bold">N° {number}</div>}
-          {date && <div className="text-[#51647A]">Date : {date}</div>}
+          {date && <div className="text-[#51647A]">{t('Date')} : {date}</div>}
         </div>
       </div>
       {/* Corps */}
@@ -202,7 +203,7 @@ export function Sheet({
             className="w-[55mm] border-t border-[#8da2bd] pt-[1mm] text-[#51647A]"
             style={{ fontSize: '2.6mm' }}
           >
-            {signature}
+            {t(signature)}
           </div>
           <Stamp
             name={stampName}
@@ -221,7 +222,7 @@ export function Sheet({
           letterSpacing: '0.04em',
         }}
       >
-        <span className="italic">{CENTER.slogan}</span>
+        <span className="italic">{t(CENTER.slogan)}</span>
       </div>
     </div>
   );
@@ -229,7 +230,7 @@ export function Sheet({
 
 export const Line = ({ k, children }: { k: string; children: ReactNode }) => (
   <div className="flex items-baseline gap-[2mm] border-b border-dotted border-[#9fb0c6] py-[0.8mm]">
-    <span className="shrink-0 text-[#51647A]">{k} :</span>
+    <span className="shrink-0 text-[#51647A]">{t(k)} :</span>
     <span className="font-semibold">{children}</span>
   </div>
 );

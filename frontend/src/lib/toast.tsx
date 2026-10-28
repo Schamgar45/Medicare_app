@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useState, ReactNode } from 'react';
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { t as translate, useLanguage } from './i18n';
 
 type Toast = { id: number; kind: 'ok' | 'err'; text: string };
 const Ctx = createContext<{ ok: (t: string) => void; err: (t: string) => void }>({
@@ -9,6 +10,7 @@ const Ctx = createContext<{ ok: (t: string) => void; err: (t: string) => void }>
 let n = 0;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  useLanguage();
   const [list, setList] = useState<Toast[]>([]);
   const push = useCallback((kind: Toast['kind'], text: string) => {
     const id = ++n;
@@ -30,10 +32,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             ) : (
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-bad" />
             )}
-            <span className="flex-1">{t.text}</span>
+            <span className="flex-1">{translate(t.text)}</span>
             <button
               onClick={() => setList((l) => l.filter((x) => x.id !== t.id))}
-              aria-label="Fermer"
+              aria-label={translate('Fermer')}
             >
               <X className="h-4 w-4 text-mute" />
             </button>

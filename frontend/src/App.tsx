@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { NAV, allowed } from '@/components/layout/nav';
 import { Skeleton } from '@/components/ui';
 import { ForgotPage, LoginPage, ResetPage } from '@/pages/AuthPages';
+import { t } from '@/lib/i18n';
 
 const L = <K extends string>(f: () => Promise<Record<K, React.ComponentType<any>>>, k: K) =>
   lazy(() => f().then((m) => ({ default: m[k] })));
@@ -52,8 +53,8 @@ function Guard({ path, children }: { path: string; children: ReactNode }) {
   if (item && !allowed(item, user?.role))
     return (
       <div className="card mx-auto mt-10 max-w-md p-10 text-center">
-        <p className="font-bold">Accès non autorisé</p>
-        <p className="mt-1 text-sm text-sub">Votre rôle ne permet pas d'ouvrir cette page.</p>
+        <p className="font-bold">{t('Accès non autorisé')}</p>
+        <p className="mt-1 text-sm text-sub">{t("Votre rôle ne permet pas d'ouvrir cette page.")}</p>
       </div>
     );
   return <>{children}</>;
@@ -183,7 +184,7 @@ export default function App() {
             path="*"
             element={
               <div className="card mx-auto mt-10 max-w-md p-10 text-center">
-                <p className="font-bold">Page introuvable</p>
+                <p className="font-bold">{t('Page introuvable')}</p>
               </div>
             }
           />

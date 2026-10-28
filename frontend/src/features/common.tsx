@@ -2,6 +2,7 @@ import { ReactNode, useState } from 'react';
 import clsx from 'clsx';
 import type { Relation } from '@/components/RelationSelect';
 import { fullName } from '@/lib/format';
+import { t as translate } from '@/lib/i18n';
 
 export const patientRel: Relation = {
   path: 'patients',
@@ -49,7 +50,7 @@ export function Tabs({
                 id === t.id ? 'bg-surface text-ink shadow-sm' : 'text-sub hover:text-ink',
               )}
             >
-              {t.label}
+              {translate(t.label)}
             </button>
           ))}
         </div>

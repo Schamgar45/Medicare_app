@@ -1,24 +1,34 @@
 import { CENTER } from './center';
+import { getLanguage, t } from './i18n';
 
-const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 export const money = (v: string | number | null | undefined) =>
-  `${nf.format(Number(v ?? 0))} ${CENTER.currency}`;
-export const num = (v: string | number | null | undefined) => nf.format(Number(v ?? 0));
+  `${new Intl.NumberFormat(getLanguage() === 'en' ? 'en-US' : 'fr-FR', { maximumFractionDigits: 0 }).format(Number(v ?? 0))} ${CENTER.currency}`;
+export const num = (v: string | number | null | undefined) =>
+  new Intl.NumberFormat(getLanguage() === 'en' ? 'en-US' : 'fr-FR', {
+    maximumFractionDigits: 0,
+  }).format(Number(v ?? 0));
 
 export function fmtDate(v?: string | null) {
   if (!v) return '—';
   const d = new Date(v.length === 10 ? v + 'T00:00:00' : v);
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return d.toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }
 export function fmtDateTime(v?: string | null) {
   if (!v) return '—';
   const d = new Date(v);
-  return `${d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+  const locale = getLanguage() === 'en' ? 'en-US' : 'fr-FR';
+  return `${d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' })} ${d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`;
 }
 export const fmtTime = (v?: string | null) => (v ? v.slice(0, 5) : '—');
 export function monthLabel(ym: string) {
   const [y, m] = ym.split('-').map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '');
+  return new Date(y, m - 1, 1)
+    .toLocaleDateString(getLanguage() === 'en' ? 'en-US' : 'fr-FR', { month: 'short' })
+    .replace('.', '');
 }
 export function ageOf(dob?: string | null) {
   if (!dob) return null;
@@ -42,9 +52,9 @@ export const fullName = (p?: { first_name?: string; last_name?: string } | null)
  */
 export function greeting(date: Date): string {
   const h = date.getHours();
-  if (h >= 5 && h < 12) return 'Bonjour';
-  if (h >= 12 && h < 18) return 'Bonne après-midi';
-  return 'Bonsoir';
+  if (h >= 5 && h < 12) return t('Bonjour');
+  if (h >= 12 && h < 18) return t('Bonne après-midi');
+  return t('Bonsoir');
 }
 export const initials = (s: string) =>
   s
@@ -99,8 +109,68 @@ function below1000(n: number): string {
   if (r) s += (s ? ' ' : '') + below100(r);
   return s;
 }
+
+const EN_UNITS = [
+  'zero',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+  'eleven',
+  'twelve',
+  'thirteen',
+  'fourteen',
+  'fifteen',
+  'sixteen',
+  'seventeen',
+  'eighteen',
+  'nineteen',
+];
+const EN_TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+const EN_SCALES = ['', 'thousand', 'million', 'billion', 'trillion', 'quadrillion'];
+
+function englishBelow1000(n: number): string {
+  const hundreds = Math.floor(n / 100);
+  const remainder = n % 100;
+  const parts: string[] = [];
+  if (hundreds) parts.push(`${EN_UNITS[hundreds]} hundred`);
+  if (remainder < 20 && remainder > 0) parts.push(EN_UNITS[remainder]);
+  else if (remainder >= 20) {
+    const tens = EN_TENS[Math.floor(remainder / 10)];
+    parts.push(remainder % 10 ? `${tens}-${EN_UNITS[remainder % 10]}` : tens);
+  }
+  return parts.join(' ');
+}
+
+function englishInWords(value: number): string {
+  if (!Number.isFinite(value)) return String(value);
+  let remainder = Math.abs(Math.round(value));
+  if (remainder === 0) return 'zero';
+  const parts: string[] = [];
+  let scale = 0;
+  while (remainder > 0) {
+    const group = remainder % 1000;
+    if (group) {
+      if (scale >= EN_SCALES.length) return new Intl.NumberFormat('en-US').format(value);
+      parts.unshift(
+        [englishBelow1000(group), EN_SCALES[scale]].filter(Boolean).join(' '),
+      );
+    }
+    remainder = Math.floor(remainder / 1000);
+    scale += 1;
+  }
+  return `${value < 0 ? 'minus ' : ''}${parts.join(' ')}`;
+}
+
 /** Montant en lettres (français), ex. 12500 -> « douze mille cinq cents ». */
 export function inWords(n: number): string {
+  if (getLanguage() === 'en') return englishInWords(n);
   n = Math.round(n);
   if (n === 0) return 'zéro';
   const parts: string[] = [];
@@ -165,7 +235,7 @@ export const LABELS: Record<string, string> = {
   MARINE: 'Marine',
   VERT: 'Vert',
 };
-export const label = (v?: string | null) => (v ? (LABELS[v] ?? v) : '—');
+export const label = (v?: string | null) => (v ? t(LABELS[v] ?? v) : '—');
 export const opts = (keys: string[]) => keys.map((k) => ({ value: k, label: label(k) }));
 
 /** Téléphone international générique : + optionnel puis 8 à 15 chiffres (espaces/tirets/points tolérés). */

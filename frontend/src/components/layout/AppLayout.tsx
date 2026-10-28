@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Bell,
   ChevronRight,
+  Languages,
   LogOut,
   Menu,
   Moon,
-  RefreshCw,
   Search,
   SlidersHorizontal,
   Sun,
@@ -16,6 +16,7 @@ import {
 import clsx from 'clsx';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme';
+import { t, useLanguage } from '@/lib/i18n';
 import { api } from '@/lib/api';
 import { CENTER, APP_VERSION } from '@/lib/center';
 import { label, initials, fmtDateTime } from '@/lib/format';
@@ -24,6 +25,7 @@ import { useList, useAction } from '@/lib/queries';
 import type { AppNotification, Dashboard } from '@/lib/types';
 
 function Brand() {
+  useLanguage();
   return (
     <div className="flex items-center gap-3">
       <img
@@ -35,7 +37,7 @@ function Brand() {
         <p className="text-[15px] font-bold tracking-tight text-ink sm:text-[17px]">
           {CENTER.name}
         </p>
-        <p className="hidden text-[11px] font-medium text-mute sm:block">{CENTER.slogan}</p>
+        <p className="hidden text-[11px] font-medium text-mute sm:block">{t(CENTER.slogan)}</p>
       </div>
     </div>
   );
@@ -75,13 +77,13 @@ function SideNav({ items, counts, collapsed = false }: { items: NavItem[]; count
   return (
     <nav
       className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-3"
-      aria-label="Navigation principale"
+      aria-label={t('Navigation principale')}
     >
       {groups.map(({ g, list }) => (
         <div key={g} className="mb-4">
           {!collapsed && (
             <p className="px-5 pb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-mute">
-              {g}
+              {t(g)}
             </p>
           )}
           {list.map(({ to, label: l, icon: Icon, countKey }) => {
@@ -105,11 +107,11 @@ function SideNav({ items, counts, collapsed = false }: { items: NavItem[]; count
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 {!collapsed && (
                   <>
-                    <span className="flex-1">{l}</span>
+                    <span className="flex-1">{t(l)}</span>
                     {c !== undefined && c > 0 && <span className={COUNT_CLASS}>{c}</span>}
                   </>
                 )}
-                {collapsed && <span className="sr-only">{l}</span>}
+                {collapsed && <span className="sr-only">{t(l)}</span>}
               </NavLink>
             );
           })}
@@ -132,12 +134,13 @@ function SideFoot({
   onLogout: () => void;
   collapsed?: boolean;
 }) {
+  useLanguage();
   return (
     <div className={clsx('shrink-0 border-t', collapsed ? 'space-y-2 p-2' : 'space-y-3 p-4')}>
       <NavLink
         to="/mon-profil"
-        title={collapsed ? `${name} · ${label(role)}` : undefined}
-        aria-label={collapsed ? `Profil de ${name}` : undefined}
+        title={collapsed ? `${name} · ${t(label(role))}` : undefined}
+        aria-label={collapsed ? `${t('Profil de')} ${name}` : undefined}
         className={clsx(
           'flex rounded-xl transition hover:bg-sunken',
           collapsed ? 'justify-center p-1.5' : 'items-center gap-3 p-1.5',
@@ -157,7 +160,7 @@ function SideFoot({
         {!collapsed && (
           <div className="min-w-0 leading-tight">
             <p className="truncate text-sm font-bold">{name}</p>
-            <p className="text-xs text-mute">{label(role)}</p>
+            <p className="text-xs text-mute">{t(label(role))}</p>
           </div>
         )}
       </NavLink>
@@ -167,17 +170,18 @@ function SideFoot({
           collapsed ? 'h-10 w-full' : 'w-full gap-2 py-2.5 text-sm font-bold',
         )}
         onClick={onLogout}
-        title={collapsed ? 'Déconnexion' : undefined}
-        aria-label="Déconnexion"
+        title={collapsed ? t('Déconnexion') : undefined}
+        aria-label={t('Déconnexion')}
       >
         <LogOut className="h-4 w-4 shrink-0" />
-        {!collapsed && 'Déconnexion'}
+        {!collapsed && t('Déconnexion')}
       </button>
     </div>
   );
 }
 
 function Notifications() {
+  useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const q = useList<AppNotification>('notifications', { ordering: '-created_at', page_size: 10 });
@@ -195,7 +199,7 @@ function Notifications() {
       <button
         className="relative grid h-10 w-10 place-items-center rounded-full border bg-surface text-sub hover:bg-sunken"
         onClick={() => setOpen(!open)}
-        aria-label="Notifications"
+        aria-label={t('Notifications')}
       >
         <Bell className="h-[18px] w-[18px]" />
         {unread > 0 && (
@@ -204,7 +208,7 @@ function Notifications() {
       </button>
       {open && (
         <div className="card absolute right-0 z-40 mt-2 w-[min(92vw,360px)] overflow-hidden shadow-xl">
-          <div className="border-b px-4 py-3 text-sm font-bold">Notifications</div>
+          <div className="border-b px-4 py-3 text-sm font-bold">{t('Notifications')}</div>
           <ul className="max-h-80 divide-y overflow-y-auto">
             {q.data?.results.map((n) => (
               <li key={n.id}>
@@ -225,7 +229,7 @@ function Notifications() {
               </li>
             ))}
             {!q.data?.results.length && (
-              <li className="p-6 text-center text-sm text-mute">Aucune notification</li>
+              <li className="p-6 text-center text-sm text-mute">{t('Aucune notification')}</li>
             )}
           </ul>
         </div>
@@ -325,6 +329,7 @@ const GLOBAL_SEARCH = [
 ];
 
 function GlobalSearch({ role }: { role?: string }) {
+  useLanguage();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -361,8 +366,8 @@ function GlobalSearch({ role }: { role?: string }) {
       <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-mute" />
       <input
         className="input h-10 bg-sunken pl-9 pr-9"
-        placeholder="Rechercher patients, rendez-vous, médicaments…"
-        aria-label="Recherche globale"
+        placeholder={t('Rechercher patients, rendez-vous, médicaments…')}
+        aria-label={t('Recherche globale')}
         value={query}
         onFocus={() => setOpen(true)}
         onChange={(e) => {
@@ -376,7 +381,7 @@ function GlobalSearch({ role }: { role?: string }) {
       {query && (
         <button
           className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-mute hover:text-ink"
-          aria-label="Effacer la recherche"
+          aria-label={t('Effacer la recherche')}
           onClick={() => {
             setQuery('');
             setOpen(false);
@@ -387,16 +392,16 @@ function GlobalSearch({ role }: { role?: string }) {
       )}
       {open && query.trim() && (
         <div className="card absolute left-0 right-0 top-full z-50 mt-2 max-h-[min(70vh,520px)] overflow-y-auto p-2 shadow-xl">
-          {result.isFetching && <p className="p-3 text-sm text-mute">Recherche en cours…</p>}
+          {result.isFetching && <p className="p-3 text-sm text-mute">{t('Recherche en cours…')}</p>}
           {result.isFetched && !result.isFetching && !hasResults && (
-            <p className="p-4 text-center text-sm text-mute">Aucun résultat pour « {query} » </p>
+            <p className="p-4 text-center text-sm text-mute">{t('Aucun résultat pour « {query} »').replace('{query}', query)}</p>
           )}
           {result.data?.map(
             (g) =>
               g.results.length > 0 && (
                 <section key={g.path} className="mb-2">
                   <h3 className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-mute">
-                    {g.title}
+                    {t(g.title)}
                   </h3>
                   {g.results.map((x: any) => (
                     <button
@@ -428,11 +433,11 @@ function GlobalSearch({ role }: { role?: string }) {
 export function AppLayout() {
   const { user, logout, can } = useAuth();
   const { theme, toggle } = useTheme();
+  const { language, toggleLanguage } = useLanguage();
   const loc = useLocation();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const nav = useNavigate();
-  const qc = useQueryClient();
   const counts = useCounts();
   useEffect(() => setOpen(false), [loc.pathname]);
 
@@ -468,14 +473,14 @@ export function AppLayout() {
           <button
             className="grid h-8 w-8 shrink-0 place-items-center rounded text-brand hover:bg-sunken"
             onClick={() => setCollapsed(!collapsed)}
-            aria-label={collapsed ? 'Déplier le menu' : 'Réduire le menu'}
-            title={collapsed ? 'Déplier le menu' : 'Réduire le menu'}
+            aria-label={collapsed ? t('Déplier le menu') : t('Réduire le menu')}
+            title={collapsed ? t('Déplier le menu') : t('Réduire le menu')}
           >
             <Menu className="h-4 w-4" />
           </button>
           {!collapsed && (
             <span className="text-xs font-bold uppercase tracking-[0.16em] text-sub">
-              Navigation
+              {t('Navigation')}
             </span>
           )}
         </div>
@@ -495,9 +500,9 @@ export function AppLayout() {
         <div className="flex shrink-0 items-center justify-between border-b px-5 py-4">
           <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-sub">
             <Menu className="h-4 w-4 text-brand" />
-            Navigation
+            {t('Navigation')}
           </span>
-          <button onClick={() => setOpen(false)} aria-label="Fermer le menu">
+          <button onClick={() => setOpen(false)} aria-label={t('Fermer le menu')}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -511,7 +516,7 @@ export function AppLayout() {
             <button
               className="grid h-10 w-10 place-items-center rounded-full border bg-surface text-sub hover:bg-sunken lg:hidden"
               onClick={() => setOpen(true)}
-              aria-label="Ouvrir le menu"
+              aria-label={t('Ouvrir le menu')}
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -519,16 +524,18 @@ export function AppLayout() {
             <GlobalSearch role={user?.role} />
             <div className="flex shrink-0 items-center gap-3">
               <button
-                className="grid h-10 w-10 place-items-center rounded-full border bg-surface text-sub hover:bg-sunken"
-                onClick={() => qc.invalidateQueries()}
-                aria-label="Actualiser"
+                className="inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border bg-surface px-2 text-sub hover:bg-sunken"
+                onClick={toggleLanguage}
+                aria-label={t(language === 'fr' ? 'Passer en anglais' : 'Passer en français')}
+                title={t(language === 'fr' ? 'Passer en anglais' : 'Passer en français')}
               >
-                <RefreshCw className="h-[18px] w-[18px]" />
+                <Languages className="h-[18px] w-[18px]" />
+                <span className="text-[10px] font-bold">{language.toUpperCase()}</span>
               </button>
               <button
                 className="grid h-10 w-10 place-items-center rounded-full border bg-surface text-sub hover:bg-sunken"
                 onClick={toggle}
-                aria-label={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+                aria-label={t(theme === 'dark' ? 'Mode clair' : 'Mode sombre')}
               >
                 {theme === 'dark' ? (
                   <Sun className="h-[18px] w-[18px]" />
@@ -540,8 +547,8 @@ export function AppLayout() {
               <NavLink
                 to="/mon-profil"
                 className="relative hidden h-10 w-10 items-center justify-center rounded-full bg-navy text-xs font-bold text-white ring-2 ring-brand/20 transition hover:ring-brand/40 md:flex"
-                aria-label="Ouvrir mon profil (en ligne)"
-                title={`${name} · ${label(user?.role)} · En ligne`}
+                aria-label={t('Ouvrir mon profil (en ligne)')}
+                title={`${name} · ${t(label(user?.role))} · ${t('En ligne')}`}
               >
                 {user?.avatar ? (
                   <img src={user.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
@@ -558,11 +565,11 @@ export function AppLayout() {
           {circuit.length > 0 && (
             <div
               className="hidden items-center gap-1 overflow-x-auto border-t px-6 py-2 md:flex"
-              aria-label="Parcours du patient"
+              aria-label={t('Parcours du patient')}
             >
               <span className="mr-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-mute">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
-                Circuit :
+                {t('Circuit :')}
               </span>
               {circuit.map((c, i) => (
                 <div key={c.to} className="flex items-center">
@@ -577,7 +584,7 @@ export function AppLayout() {
                       )
                     }
                   >
-                    {c.label}
+                    {t(c.label)}
                   </NavLink>
                   {i < circuit.length - 1 && (
                     <ChevronRight className="mx-0.5 h-3.5 w-3.5 text-mute" />
@@ -592,11 +599,11 @@ export function AppLayout() {
         </main>
         <footer className="flex items-center justify-between border-t bg-surface px-6 py-3 text-xs text-mute">
           <span>
-            {CENTER.name} · version {APP_VERSION}
+            {CENTER.name} · {t('version')} {APP_VERSION}
           </span>
           <span className="flex items-center gap-2">
             <i className="h-2 w-2 rounded-full bg-accent" />
-            Opérationnel
+            {t('Opérationnel')}
           </span>
         </footer>
       </div>

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Inbox, Loader2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { initials, label } from '@/lib/format';
+import { t } from '@/lib/i18n';
 
 export const Skeleton = ({ className }: { className?: string }) => (
   <div className={clsx('skeleton', className)} aria-hidden />
@@ -65,7 +66,7 @@ const STATUS_TONE: Record<string, keyof typeof TONES> = {
   NORMAL: 'mute',
 };
 export const StatusBadge = ({ value }: { value?: string | null }) => (
-  <Badge tone={STATUS_TONE[value ?? ''] ?? 'mute'}>{label(value)}</Badge>
+  <Badge tone={STATUS_TONE[value ?? ''] ?? 'mute'}>{t(label(value))}</Badge>
 );
 
 export function PageHeader({
@@ -80,8 +81,8 @@ export function PageHeader({
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-sub">{subtitle}</p>}
+        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{t(title)}</h1>
+        {subtitle && <p className="mt-1 text-sm text-sub">{t(subtitle)}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -107,8 +108,8 @@ export function EmptyState({ title = 'Rien à afficher', hint }: { title?: strin
       <div className="grid h-12 w-12 place-items-center rounded-full bg-sunken text-mute">
         <Inbox className="h-6 w-6" />
       </div>
-      <p className="font-semibold">{title}</p>
-      {hint && <p className="max-w-sm text-sm text-sub">{hint}</p>}
+      <p className="font-semibold">{t(title)}</p>
+      {hint && <p className="max-w-sm text-sm text-sub">{t(hint)}</p>}
     </div>
   );
 }
@@ -116,11 +117,11 @@ export function EmptyState({ title = 'Rien à afficher', hint }: { title?: strin
 export function ErrorState({ onRetry }: { onRetry?: () => void }) {
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-      <p className="font-semibold">Impossible de charger les données</p>
-      <p className="text-sm text-sub">Vérifiez la connexion puis réessayez.</p>
+      <p className="font-semibold">{t('Impossible de charger les données')}</p>
+      <p className="text-sm text-sub">{t('Vérifiez la connexion puis réessayez.')}</p>
       {onRetry && (
         <button className="btn btn-ghost btn-sm" onClick={onRetry}>
-          Réessayer
+          {t('Réessayer')}
         </button>
       )}
     </div>
@@ -146,14 +147,14 @@ export function Field({
   return (
     <div className={clsx('space-y-1.5', className)}>
       <label htmlFor={id} className="block text-xs font-semibold text-sub">
-        {l}
+        {t(l)}
         {required && <span className="text-bad"> *</span>}
       </label>
       <div id={id}>{children}</div>
-      {hint && !error && <p className="text-xs text-mute">{hint}</p>}
+      {hint && !error && <p className="text-xs text-mute">{t(hint)}</p>}
       {error && (
         <p className="text-xs font-medium text-bad" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
     </div>
@@ -205,7 +206,7 @@ export function Modal({
           <h2 className="text-base font-bold">{title}</h2>
           <button
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={t('Fermer')}
             className="rounded-md p-1 text-sub hover:bg-sunken"
           >
             <X className="h-5 w-5" />
@@ -244,15 +245,15 @@ export function Confirm({
       footer={
         <>
           <button className="btn btn-ghost" onClick={onCancel}>
-            Annuler
+            {t('Annuler')}
           </button>
           <button className="btn btn-danger" onClick={onConfirm} disabled={busy}>
-            {busy && <Spinner />}Confirmer
+            {busy && <Spinner />}{t('Confirmer')}
           </button>
         </>
       }
     >
-      <p className="text-sm text-sub">{text}</p>
+      <p className="text-sm text-sub">{t(text)}</p>
     </Modal>
   );
 }
@@ -272,13 +273,13 @@ export function Pagination({
   if (count <= size) return null;
   return (
     <div className="flex items-center justify-between gap-3 border-t px-4 py-3 text-sm text-sub">
-      <span>{count} résultats</span>
+      <span>{count} {t('résultats')}</span>
       <div className="flex items-center gap-2">
         <button
           className="btn btn-ghost btn-sm"
           disabled={page <= 1}
           onClick={() => onPage(page - 1)}
-          aria-label="Page précédente"
+          aria-label={t('Page précédente')}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -289,7 +290,7 @@ export function Pagination({
           className="btn btn-ghost btn-sm"
           disabled={page >= pages}
           onClick={() => onPage(page + 1)}
-          aria-label="Page suivante"
+          aria-label={t('Page suivante')}
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -328,7 +329,7 @@ export function DataTable<T extends { id: number }>({
   if (error) return <ErrorState onRetry={onRetry} />;
   if (loading) {
     return (
-      <div className="space-y-3 p-4" aria-busy="true" aria-label="Chargement">
+      <div className="space-y-3 p-4" aria-busy="true" aria-label={t('Chargement')}>
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-11 w-full" />
         ))}
@@ -351,7 +352,7 @@ export function DataTable<T extends { id: number }>({
               .filter((c) => !c.hideOnMobile)
               .map((c) => (
                 <div key={c.key} className="flex items-start justify-between gap-3 text-sm">
-                  <span className="text-sub">{c.header}</span>
+                  <span className="text-sub">{t(c.header)}</span>
                   <span className="text-right">{c.render(r)}</span>
                 </div>
               ))}
@@ -365,7 +366,7 @@ export function DataTable<T extends { id: number }>({
             <tr>
               {columns.map((c) => (
                 <th key={c.key} className="th">
-                  {c.header}
+                  {t(c.header)}
                 </th>
               ))}
             </tr>
@@ -416,9 +417,9 @@ export function Stat({
   return (
     <div className="card flex min-h-[106px] items-center justify-between gap-4 overflow-hidden border-l-4 border-l-brand p-4 sm:p-5">
       <div className="min-w-0">
-        <p className="truncate text-xs font-bold uppercase tracking-[0.1em] text-sub">{l}</p>
+        <p className="truncate text-xs font-bold uppercase tracking-[0.1em] text-sub">{t(l)}</p>
         <p className="mt-1 truncate text-2xl font-extrabold tabular-nums sm:text-[28px]">{value}</p>
-        {hint && <p className="mt-1 truncate text-xs text-sub">{hint}</p>}
+        {hint && <p className="mt-1 truncate text-xs text-sub">{t(hint)}</p>}
       </div>
       <div
         className={clsx('grid h-11 w-11 shrink-0 place-items-center rounded-lg sm:h-12 sm:w-12', STAT_TONE[tone])}
@@ -434,7 +435,7 @@ export function InfoGrid({ items }: { items: [string, ReactNode][] }) {
     <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
       {items.map(([k, v]) => (
         <div key={k}>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-sub">{k}</dt>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-sub">{t(k)}</dt>
           <dd className="mt-0.5 text-sm">{v || '—'}</dd>
         </div>
       ))}

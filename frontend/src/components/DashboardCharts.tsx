@@ -13,6 +13,7 @@ import {
   YAxis,
 } from 'recharts';
 import { label, money, monthLabel, num } from '@/lib/format';
+import { t } from '@/lib/i18n';
 import type { MonthPoint } from '@/lib/types';
 
 function Tip({ active, payload, label: title, money: isMoney }: any) {
@@ -96,7 +97,7 @@ export function Donut({ data }: { data: Record<string, number> }) {
   const total = points.reduce((sum, point) => sum + point.value, 0);
 
   if (!points.length) {
-    return <p className="grid h-full place-items-center text-sm text-mute">Aucune donnée</p>;
+    return <p className="grid h-full place-items-center text-sm text-mute">{t('Aucune donnée')}</p>;
   }
 
   return (
@@ -122,7 +123,7 @@ export function Donut({ data }: { data: Record<string, number> }) {
         <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
           <div>
             <p className="text-2xl font-extrabold tabular-nums">{num(total)}</p>
-            <p className="text-xs text-sub">Total</p>
+            <p className="text-xs text-sub">{t('Total')}</p>
           </div>
         </div>
       </div>
@@ -148,7 +149,7 @@ export function ByStatus({ data }: { data: Record<string, number> }) {
     .sort((a, b) => b.value - a.value);
 
   if (!points.length) {
-    return <p className="grid h-full place-items-center text-sm text-mute">Aucune donnée</p>;
+    return <p className="grid h-full place-items-center text-sm text-mute">{t('Aucune donnée')}</p>;
   }
 
   return (

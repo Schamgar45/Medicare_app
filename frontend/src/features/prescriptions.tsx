@@ -11,11 +11,13 @@ import { useToast } from '@/lib/toast';
 import { apiError } from '@/lib/api';
 import type { Prescription, PrescriptionItem } from '@/lib/types';
 import { fmtDate, fullName, opts } from '@/lib/format';
+import { t, useLanguage } from '@/lib/i18n';
 import { medicationRel } from './common';
 
 const STATUSES = ['DRAFT', 'VALIDATED', 'PARTIALLY_DISPENSED', 'DISPENSED', 'CANCELLED'];
 
 export function PrescriptionsPage() {
+  useLanguage();
   const [creating, setCreating] = useState(false);
   const { can } = useAuth();
   const nav = useNavigate();
@@ -88,6 +90,7 @@ export function PrescriptionsPage() {
 }
 
 export function PrescriptionDetailPage() {
+  useLanguage();
   const { id } = useParams();
   const nav = useNavigate();
   const toast = useToast();
@@ -100,7 +103,7 @@ export function PrescriptionDetailPage() {
 
   if (q.isLoading) return <Skeleton className="h-64" />;
   const rx = q.data;
-  if (!rx) return <div className="card p-10 text-center text-sub">Ordonnance introuvable.</div>;
+  if (!rx) return <div className="card p-10 text-center text-sub">{t('Ordonnance introuvable.')}</div>;
   const editable = can('DOCTOR') && ['DRAFT', 'VALIDATED'].includes(rx.status);
 
   const change = async (status: string) => {
@@ -132,7 +135,7 @@ export function PrescriptionDetailPage() {
             render: (i: PrescriptionItem) => (
               <button
                 className="p-1.5 text-bad"
-                aria-label="Retirer"
+                aria-label={t('Retirer')}
                 onClick={async () => {
                   try {
                     await removeItem.mutateAsync(i.id);
@@ -210,7 +213,7 @@ export function PrescriptionDetailPage() {
         </div>
         <section className="card overflow-hidden">
           <div className="flex items-center justify-between border-b p-4">
-            <h2 className="font-bold">Médicaments prescrits</h2>
+            <h2 className="font-bold">{t('Médicaments prescrits')}</h2>
             {editable && (
               <button className="btn btn-primary btn-sm" onClick={() => setAdding(true)}>
                 <Plus className="h-4 w-4" />
@@ -222,7 +225,7 @@ export function PrescriptionDetailPage() {
             columns={cols}
             rows={rx.items}
             empty={
-              <p className="p-6 text-center text-sm text-mute">Aucun médicament pour l'instant.</p>
+              <p className="p-6 text-center text-sm text-mute">{t("Aucun médicament pour l'instant.")}</p>
             }
           />
         </section>

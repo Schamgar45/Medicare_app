@@ -2,6 +2,7 @@ import { ResourcePage, ResourceConfig } from '@/components/ResourcePage';
 import { Badge, PageHeader, StatusBadge } from '@/components/ui';
 import type { Medication, MedicationBatch, StockMovement } from '@/lib/types';
 import { fmtDate, fmtDateTime, money, num, opts } from '@/lib/format';
+import { t, useLanguage } from '@/lib/i18n';
 import { Tabs, medicationRel } from './common';
 
 const medCfg: ResourceConfig<Medication> = {
@@ -44,7 +45,7 @@ const medCfg: ResourceConfig<Medication> = {
       key: 'l',
       header: 'Alerte',
       render: (m) =>
-        m.is_low_stock ? <Badge tone="warn">Stock bas</Badge> : <Badge tone="ok">OK</Badge>,
+        m.is_low_stock ? <Badge tone="warn">{t('Stock bas')}</Badge> : <Badge tone="ok">OK</Badge>,
     },
     { key: 'p', header: 'Prix', render: (m) => money(m.unit_price) },
   ],
@@ -176,6 +177,7 @@ const moveCfg: ResourceConfig<StockMovement> = {
 };
 
 export function PharmacyPage() {
+  useLanguage();
   return (
     <>
       <PageHeader title="Pharmacie" subtitle="Médicaments, lots et mouvements de stock" />

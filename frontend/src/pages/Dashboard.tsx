@@ -24,6 +24,7 @@ import { Avatar, Skeleton, Stat, ErrorState, StatusBadge, Pagination } from '@/c
 import { useList } from '@/lib/queries';
 import type { Appointment } from '@/lib/types';
 import { fmtTime, fullName, label, money, num, greeting } from '@/lib/format';
+import { t, useLanguage } from '@/lib/i18n';
 
 const Monthly = lazy(() =>
   import('@/components/DashboardCharts').then((m) => ({ default: m.Monthly })),
@@ -48,7 +49,7 @@ function ChartCard({
 }) {
   return (
     <section className={`card ${compact ? 'p-3' : 'p-4'} ${wide ? 'lg:col-span-2' : ''}`}>
-      <h3 className={`${compact ? 'mb-2' : 'mb-3'} text-sm font-bold`}>{title}</h3>
+      <h3 className={`${compact ? 'mb-2' : 'mb-3'} text-sm font-bold`}>{t(title)}</h3>
       <div className={compact ? 'h-52' : 'h-60'}>
         <Suspense fallback={<Skeleton className="h-full" />}>{children}</Suspense>
       </div>
@@ -71,9 +72,9 @@ function Queue() {
   return (
     <section className="card flex flex-col overflow-hidden">
       <div className="flex items-center justify-between border-b px-5 py-4">
-        <h3 className="font-bold">File d'attente du jour</h3>
+        <h3 className="font-bold">{t("File d'attente du jour")}</h3>
         <Link to="/appointments" className="text-xs font-semibold text-brand hover:underline">
-          Tout voir
+          {t('Tout voir')}
         </Link>
       </div>
       {q.isLoading ? (
@@ -83,7 +84,7 @@ function Queue() {
           ))}
         </div>
       ) : !rows.length ? (
-        <p className="p-8 text-center text-sm text-mute">Aucun rendez-vous aujourd'hui.</p>
+        <p className="p-8 text-center text-sm text-mute">{t("Aucun rendez-vous aujourd'hui.")}</p>
       ) : (
         <>
           <ul className="divide-y">
@@ -128,17 +129,17 @@ function PageTabs({
         className="inline-flex h-9 items-center gap-1 rounded-full border bg-surface px-3 text-xs font-bold text-sub transition hover:bg-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
         disabled={view === 0}
         onClick={() => onChange(view - 1)}
-        aria-label="Page précédente"
+        aria-label={t('Page précédente')}
       >
         <ChevronLeft className="h-4 w-4" />
-        <span className="hidden sm:inline">Précédent</span>
+        <span className="hidden sm:inline">{t('Précédent')}</span>
       </button>
       {Array.from({ length: count }).map((_, i) => (
         <button
           key={i}
           onClick={() => onChange(i)}
           aria-current={i === view}
-          aria-label={`Aller à la page ${i + 1}`}
+          aria-label={`${t('Aller à la page')} ${i + 1}`}
           className={clsx(
             'grid h-9 w-9 place-items-center rounded-full text-sm font-bold tabular-nums transition',
             i === view
@@ -153,9 +154,9 @@ function PageTabs({
         className="inline-flex h-9 items-center gap-1 rounded-full border bg-surface px-3 text-xs font-bold text-sub transition hover:bg-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
         disabled={view === count - 1}
         onClick={() => onChange(view + 1)}
-        aria-label="Page suivante"
+        aria-label={t('Page suivante')}
       >
-        <span className="hidden sm:inline">Suivant</span>
+        <span className="hidden sm:inline">{t('Suivant')}</span>
         <ChevronRight className="h-4 w-4" />
       </button>
     </div>
@@ -192,6 +193,7 @@ function useServerNow() {
 }
 
 export default function DashboardPage() {
+  useLanguage();
   const { user, doctor, can } = useAuth();
   const [view, setView] = useState(0);
   const q = useQuery({
@@ -441,7 +443,7 @@ export default function DashboardPage() {
           const cur = Math.min(view, views.length - 1);
           return (
             <section
-              aria-label="Tableau de bord paginé"
+              aria-label={t('Tableau de bord paginé')}
               aria-roledescription="carrousel"
               className="overflow-hidden rounded-2xl border bg-surface shadow-sm"
             >
@@ -452,13 +454,13 @@ export default function DashboardPage() {
                 <div className="relative flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
-                      {date} · {time} · Tableau de bord
+                      {date} · {time} · {t('Tableau de bord')}
                     </p>
                     <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
                       {hello} {name}
                     </h1>
                     <p className="mt-0.5 text-sm text-white/85">
-                      {views[cur].label} · Page {cur + 1} / {views.length} — {views[cur].hint}
+                      {t(views[cur].label)} · {t('Page')} {cur + 1} / {views.length} — {t(views[cur].hint)}
                     </p>
                   </div>
                   <div className="[&_button]:!border-white/25 [&_button]:!bg-white/10 [&_button]:!text-white [&_button]:backdrop-blur [&_button]:hover:!bg-white/20">
@@ -474,7 +476,7 @@ export default function DashboardPage() {
                         className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/25"
                       >
                         {x.i}
-                        {x.t}
+                        {t(x.t)}
                       </Link>
                     ))}
                   </div>
