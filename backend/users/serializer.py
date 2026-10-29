@@ -19,6 +19,9 @@ from django.contrib.auth.password_validation import validate_password
 class UserSerializer(serializers.ModelSerializer):
 
     avatar = serializers.SerializerMethodField()
+    is_online = serializers.SerializerMethodField()
+
+    ONLINE_WINDOW = timedelta(seconds=90)
 
     class Meta:
         model = User
@@ -34,6 +37,7 @@ class UserSerializer(serializers.ModelSerializer):
             "status",
             "is_superuser",
             "avatar",
+            "is_online",
             "created_at",
             "updated_at",
             "password_changed_at",
@@ -55,6 +59,13 @@ class UserSerializer(serializers.ModelSerializer):
         if request is not None:
             return request.build_absolute_uri(obj.avatar.url)
         return obj.avatar.url
+
+    def get_is_online(self, obj) -> bool:
+        return bool(
+            obj.status == User.Status.ACTIVE
+            and obj.last_seen_at
+            and obj.last_seen_at >= timezone.now() - self.ONLINE_WINDOW
+        )
 
     def validate_phone(self, value):
         try:

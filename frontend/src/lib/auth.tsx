@@ -81,6 +81,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(AUTH_LOST, onLost);
   }, [qc]);
 
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const heartbeat = () => {
+      api.post('/auth/profile/presence/').catch((error: unknown) => {
+        if (active) console.error('Unable to update online presence.', error);
+      });
+    };
+    heartbeat();
+    const interval = window.setInterval(heartbeat, 30_000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') heartbeat();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [user?.id]);
+
   const login = useCallback(
     async (email: string, password: string, remember = true) => {
       const r = await api.post('/auth/login/', { email, password });

@@ -82,7 +82,7 @@ function SideNav({ items, counts, collapsed = false }: { items: NavItem[]; count
       {groups.map(({ g, list }) => (
         <div key={g} className="mb-4">
           {!collapsed && (
-            <p className="px-5 pb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-mute">
+            <p className="px-5 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-mute">
               {t(g)}
             </p>
           )}
@@ -96,22 +96,38 @@ function SideNav({ items, counts, collapsed = false }: { items: NavItem[]; count
                 title={collapsed ? l : undefined}
                 className={({ isActive }) =>
                   clsx(
-                    'flex items-center gap-3 border-r-[3px] py-2.5 text-[15px] font-medium transition',
-                    collapsed ? 'justify-center px-0' : 'px-5',
+                    'relative mx-3 mb-1 flex items-center gap-2.5 rounded-md py-2 text-xs font-medium transition-colors',
+                    collapsed ? 'mx-2 justify-center px-0' : 'px-2.5',
                     isActive
-                      ? 'border-brand bg-brand/10 text-brand'
-                      : 'border-transparent text-sub hover:bg-sunken hover:text-ink',
+                      ? 'bg-[#ddf3e9] text-[#08785f]'
+                      : 'text-sub hover:bg-[#f2f6f4] hover:text-ink',
                   )
                 }
               >
-                <Icon className="h-[18px] w-[18px] shrink-0" />
-                {!collapsed && (
+                {({ isActive }) => (
                   <>
-                    <span className="flex-1">{t(l)}</span>
-                    {c !== undefined && c > 0 && <span className={COUNT_CLASS}>{c}</span>}
+                    <Icon
+                      className={clsx(
+                        'h-4 w-4 shrink-0',
+                        isActive ? 'text-[#08785f]' : 'text-mute',
+                      )}
+                    />
+                    {!collapsed && (
+                      <>
+                        <span className="flex-1">{t(l)}</span>
+                        {isActive ? (
+                          <span className="h-1 w-1 shrink-0 rounded-full bg-[#08785f]" aria-hidden="true" />
+                        ) : (
+                          c !== undefined && c > 0 && <span className={COUNT_CLASS}>{c}</span>
+                        )}
+                      </>
+                    )}
+                    {collapsed && <span className="sr-only">{t(l)}</span>}
+                    {collapsed && isActive && (
+                      <span className="absolute right-0.5 h-1 w-1 rounded-full bg-[#08785f]" aria-hidden="true" />
+                    )}
                   </>
                 )}
-                {collapsed && <span className="sr-only">{t(l)}</span>}
               </NavLink>
             );
           })}
@@ -510,7 +526,7 @@ export function AppLayout() {
         <SideFoot name={name} role={user?.role} avatar={user?.avatar} onLogout={handleLogout} />
       </aside>
 
-      <div className="flex min-w-0 flex-col">
+      <div className="workspace-shell flex min-w-0 flex-col">
         <header className="sticky top-0 z-30 border-b bg-surface/90 backdrop-blur">
           <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
             <button
@@ -594,7 +610,7 @@ export function AppLayout() {
             </div>
           )}
         </header>
-        <main className="mx-auto w-full max-w-[1400px] flex-1 animate-rise p-4 sm:p-6">
+        <main className="workspace-content mx-auto w-full max-w-[1400px] flex-1 animate-rise p-4 sm:p-6">
           <Outlet />
         </main>
         <footer className="flex items-center justify-between border-t bg-surface px-6 py-3 text-xs text-mute">

@@ -40,6 +40,7 @@ export interface ResourceConfig<T extends { id: number }> {
   createPath?: string;
   createHint?: string;
   embedded?: boolean;
+  refetchInterval?: number;
   noCreate?: boolean;
   hideCreateButton?: boolean;
   onCreated?: (r: T, go: (to: string) => void) => void;
@@ -84,7 +85,7 @@ export function ResourcePage<T extends { id: number }>({
     ordering: cfg.ordering,
     ...filters,
     ...cfg.fixedParams,
-  });
+  }, true, cfg.refetchInterval);
   const save = useSave(cfg.path, cfg.createPath);
   const remove = useRemove(cfg.path);
 

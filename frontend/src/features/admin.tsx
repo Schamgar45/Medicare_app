@@ -9,12 +9,32 @@ import { apiError } from '@/lib/api';
 import { Ban, Plus, Power } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import type { Role, Service, Specialty, User } from '@/lib/types';
-import { fmtDateTime, label, money, opts } from '@/lib/format';
+import { fmtDateTime, initials, label, money, opts } from '@/lib/format';
 import { t, useLanguage } from '@/lib/i18n';
 
 // Seul le superuser (createsuperuser) peut créer/promouvoir un ADMIN.
 const ALL_ROLES: Role[] = ['ADMIN', 'DOCTOR', 'RECEPTIONIST', 'LABORANT', 'PHARMACIST', 'CASHIER'];
 const STAFF_ROLES: Role[] = ALL_ROLES.filter((r) => r !== 'ADMIN');
+
+function UserAvatar({ user }: { user: User }) {
+  const name = `${user.first_name} ${user.last_name}`.trim() || user.username;
+  return (
+    <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent/10 text-xs font-semibold text-accent">
+      {user.avatar ? (
+        <img src={user.avatar} alt="" className="h-full w-full rounded-full object-cover" />
+      ) : (
+        initials(name) || user.username.slice(0, 1).toUpperCase()
+      )}
+      {user.is_online && (
+        <span
+          className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-ok ring-2 ring-surface"
+          title={t('En ligne')}
+          aria-label={t('En ligne')}
+        />
+      )}
+    </span>
+  );
+}
 
 /** Désactiver / réactiver un compte (bouton par ligne, règles gérées côté backend). */
 function UserActions({ u }: { u: User }) {
@@ -63,6 +83,7 @@ const userCfg: ResourceConfig<User> = {
   writeRoles: [],
   canDelete: true,
   ordering: '-id',
+  refetchInterval: 30_000,
   mobileTitle: (u) => `${u.first_name} ${u.last_name}`,
   rowActions: (u) => <UserActions u={u} />,
   filters: [
@@ -77,8 +98,12 @@ const userCfg: ResourceConfig<User> = {
       key: 'n',
       header: 'Nom',
       render: (u) => (
-        <span className="font-semibold">
-          {u.first_name} {u.last_name}
+        <span className="inline-flex items-center gap-2.5">
+          <UserAvatar user={u} />
+          <span className="flex flex-col leading-tight">
+            <span className="font-semibold">{`${u.first_name} ${u.last_name}`.trim()}</span>
+            <span className="mt-0.5 text-[10px] text-sub">{u.username}</span>
+          </span>
         </span>
       ),
       hideOnMobile: true,

@@ -21,6 +21,7 @@ export interface User {
   created_at?: string;
   is_superuser?: boolean;
   avatar?: string | null;
+  is_online?: boolean;
   password_changed_at?: string | null;
 }
 export interface Service {

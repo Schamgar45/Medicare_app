@@ -79,10 +79,10 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{t(title)}</h1>
-        {subtitle && <p className="mt-1 text-sm text-sub">{t(subtitle)}</p>}
+        <h1 className="text-[22px] font-bold tracking-tight text-ink sm:text-2xl">{t(title)}</h1>
+        {subtitle && <p className="mt-0.5 text-sm text-sub">{t(subtitle)}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -415,17 +415,17 @@ export function Stat({
   tone?: 'brand' | 'accent' | 'warn' | 'bad';
 }) {
   return (
-    <div className="card flex min-h-[106px] items-center justify-between gap-4 overflow-hidden border-l-4 border-l-brand p-4 sm:p-5">
-      <div className="min-w-0">
-        <p className="truncate text-xs font-bold uppercase tracking-[0.1em] text-sub">{t(l)}</p>
-        <p className="mt-1 truncate text-2xl font-extrabold tabular-nums sm:text-[28px]">{value}</p>
-        {hint && <p className="mt-1 truncate text-xs text-sub">{t(hint)}</p>}
+    <div className="card flex min-h-[106px] flex-col justify-between gap-2 p-3 sm:p-3.5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-xs font-medium text-sub">{t(l)}</p>
+        <div
+          className={clsx('grid h-7 w-7 shrink-0 place-items-center rounded-md', STAT_TONE[tone])}
+        >
+          {icon}
+        </div>
       </div>
-      <div
-        className={clsx('grid h-11 w-11 shrink-0 place-items-center rounded-lg sm:h-12 sm:w-12', STAT_TONE[tone])}
-      >
-        {icon}
-      </div>
+      <p className="truncate text-2xl font-bold tabular-nums">{value}</p>
+      {hint && <p className="truncate text-[10px] text-sub">{t(hint)}</p>}
     </div>
   );
 }

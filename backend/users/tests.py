@@ -3,7 +3,9 @@ from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.files.base import ContentFile
+from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import timedelta
 import tempfile
 
 
@@ -67,6 +69,34 @@ class AuthAPITests(APITestCase):
             response.data["user"]["avatar"],
             "http://testserver/media/avatars/profile.png",
         )
+
+    def test_presence_heartbeat_and_expiration(self):
+        self.client.force_authenticate(self.user)
+        heartbeat = self.client.post("/api/auth/profile/presence/")
+
+        self.assertEqual(heartbeat.status_code, 200)
+        self.assertTrue(heartbeat.data["is_online"])
+        self.user.refresh_from_db()
+        self.assertIsNotNone(self.user.last_seen_at)
+        self.assertTrue(self.client.get("/api/auth/profile/").data["is_online"])
+
+        self.user.last_seen_at = timezone.now() - timedelta(seconds=91)
+        self.user.save(update_fields=["last_seen_at"])
+        self.assertFalse(self.client.get("/api/auth/profile/").data["is_online"])
+
+    def test_logout_clears_presence(self):
+        self.user.last_seen_at = timezone.now()
+        self.user.save(update_fields=["last_seen_at"])
+        self.client.force_authenticate(self.user)
+        refresh = RefreshToken.for_user(self.user)
+
+        response = self.client.post(
+            "/api/auth/logout/", {"refresh": str(refresh)}, format="json"
+        )
+
+        self.assertIn(response.status_code, (200, 205))
+        self.user.refresh_from_db()
+        self.assertIsNone(self.user.last_seen_at)
 
     def test_password_reset_flow(self):
         # request password reset

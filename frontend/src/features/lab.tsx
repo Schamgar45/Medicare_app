@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, FlaskConical, Play, Printer, TestTube, X } from 'lucide-react';
+import { Check, FlaskConical, Play, Plus, Printer, TestTube, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ResourcePage, ResourceConfig } from '@/components/ResourcePage';
@@ -97,9 +97,14 @@ function RequestActions({ r, onResult }: { r: LabRequest; onResult: (r: LabReque
   );
 }
 
-function Requests() {
+function Requests({
+  creating,
+  onCreateChange,
+}: {
+  creating: boolean;
+  onCreateChange: (open: boolean) => void;
+}) {
   const [target, setTarget] = useState<LabRequest | null>(null);
-  const [creating, setCreating] = useState(false);
   const { can } = useAuth();
   const toast = useToast();
   const create = useSave<LabRequest>('lab/requests');
@@ -135,11 +140,6 @@ function Requests() {
         options: opts(['NORMAL', 'URGENT', 'CRITICAL']),
       },
     ],
-    extraHeader: can('DOCTOR') ? (
-      <button className="btn btn-primary" onClick={() => setCreating(true)}>
-        {t('Nouvelle demande')}
-      </button>
-    ) : undefined,
     columns: [
       {
         key: 'n',
@@ -211,7 +211,7 @@ function Requests() {
       />
       <CreateFromConsultation
         open={creating}
-        onClose={() => setCreating(false)}
+        onClose={() => onCreateChange(false)}
         title="Nouvelle demande d'examen"
         extraFields={[
           {
@@ -352,6 +352,7 @@ function Results() {
 export function LabPage() {
   useLanguage();
   const { can } = useAuth();
+  const [creating, setCreating] = useState(false);
   return (
     <>
       <PageHeader
@@ -359,8 +360,20 @@ export function LabPage() {
         subtitle="Les résultats peuvent arriver des jours après la demande : suivez chaque étape."
       />
       <Tabs
+        actions={(activeTabId) =>
+          activeTabId === 'req' && can('DOCTOR') ? (
+            <button className="btn btn-primary" onClick={() => setCreating(true)}>
+              <Plus className="h-4 w-4" />
+              {t('Nouvelle demande')}
+            </button>
+          ) : null
+        }
         tabs={[
-          { id: 'req', label: 'Demandes', node: <Requests /> },
+          {
+            id: 'req',
+            label: 'Demandes',
+            node: <Requests creating={creating} onCreateChange={setCreating} />,
+          },
           { id: 'res', label: 'Résultats', node: <Results /> },
           ...(can('LABORANT', 'DOCTOR')
             ? [{ id: 'tests', label: "Types d'examens", node: <ResourcePage cfg={testCfg} /> }]

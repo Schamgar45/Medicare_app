@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Check, CreditCard, Plus, Printer, Trash2 } from 'lucide-react';
 import { ResourcePage, ResourceConfig } from '@/components/ResourcePage';
@@ -181,15 +181,57 @@ const itemCfg: ResourceConfig<BillingItem> = {
 export function BillingPage() {
   useLanguage();
   const { can } = useAuth();
+  const [createInvoice, setCreateInvoice] = useState<(() => void) | null>(null);
+  const [createItem, setCreateItem] = useState<(() => void) | null>(null);
+  const registerCreateInvoice = useCallback(
+    (open: (() => void) | null) => setCreateInvoice(() => open),
+    [],
+  );
+  const registerCreateItem = useCallback(
+    (open: (() => void) | null) => setCreateItem(() => open),
+    [],
+  );
   return (
     <>
       <PageHeader title="Facturation" subtitle="Factures, paiements et reçus" />
       <Tabs
+        actions={(activeTabId) => {
+          const action = {
+            inv: { label: 'Nouvelle facture', onClick: createInvoice },
+            items: { label: 'Nouvel acte', onClick: createItem },
+          }[activeTabId];
+          return action?.onClick ? (
+            <button className="btn btn-primary" onClick={action.onClick}>
+              <Plus className="h-4 w-4" />
+              {t(action.label)}
+            </button>
+          ) : null;
+        }}
         tabs={[
-          { id: 'inv', label: 'Factures', node: <ResourcePage cfg={invoiceCfg} /> },
+          {
+            id: 'inv',
+            label: 'Factures',
+            node: (
+              <ResourcePage
+                cfg={{ ...invoiceCfg, hideCreateButton: true }}
+                onCreateActionReady={registerCreateInvoice}
+              />
+            ),
+          },
           { id: 'pay', label: 'Paiements', node: <ResourcePage cfg={paymentCfg} /> },
           ...(can(...STAFF)
-            ? [{ id: 'items', label: 'Actes facturables', node: <ResourcePage cfg={itemCfg} /> }]
+            ? [
+                {
+                  id: 'items',
+                  label: 'Actes facturables',
+                  node: (
+                    <ResourcePage
+                      cfg={{ ...itemCfg, hideCreateButton: true }}
+                      onCreateActionReady={registerCreateItem}
+                    />
+                  ),
+                },
+              ]
             : []),
         ]}
       />

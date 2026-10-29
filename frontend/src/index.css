@@ -49,6 +49,37 @@
   color-scheme: dark;
 }
 
+html[data-theme='light'] .workspace-shell {
+  background-color: #f6faf8;
+}
+
+html[data-theme='light'] .workspace-content {
+  --bg: 246 250 248;
+  --surface: 255 255 255;
+  --sunken: 242 246 244;
+  --line: 225 233 229;
+  --ink: 29 47 39;
+  --sub: 111 126 118;
+  --mute: 145 159 151;
+  --brand: 12 105 82;
+  --brand-ink: 255 255 255;
+  --accent: 25 133 105;
+  --navy: 17 94 76;
+  --ok: 25 133 105;
+  --warn: 180 116 27;
+  --bad: 220 65 75;
+  --shadow: 24 48 40;
+  --chart-1: #0c755b;
+  --chart-2: #3a8ba5;
+  --chart-3: #c58a2a;
+  --chart-4: #d97783;
+  --chart-grid: #e1e9e5;
+}
+
+.workspace-content {
+  color: rgb(var(--ink));
+}
+
 html,
 body,
 #root {
@@ -208,6 +239,36 @@ html[data-theme='dark'] #boot {
   .td {
     @apply px-5 py-3.5 text-sm;
   }
+}
+
+.workspace-content .card {
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgb(var(--shadow) / 0.06);
+}
+.workspace-content .btn {
+  height: 2.125rem;
+  border-radius: 6px;
+  padding-inline: 1rem;
+  font-weight: 500;
+}
+.workspace-content .btn.btn-sm {
+  height: 2rem;
+  padding-inline: 0.75rem;
+}
+.workspace-content input.input,
+.workspace-content select.input {
+  height: 2rem;
+  border-radius: 6px;
+}
+.workspace-content .th {
+  padding: 0.625rem 0.75rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.workspace-content .td {
+  padding: 0.75rem;
+  font-size: 0.75rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

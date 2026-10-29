@@ -61,6 +61,7 @@ class User(AbstractUser):
         null=True,
         help_text="Photo de profil (optionnelle).",
     )
+    last_seen_at = models.DateTimeField(null=True, blank=True)
     password_changed_at = models.DateTimeField(
         null=True,
         blank=True,

@@ -442,49 +442,37 @@ export default function DashboardPage() {
 
           const cur = Math.min(view, views.length - 1);
           return (
-            <section
-              aria-label={t('Tableau de bord paginé')}
-              aria-roledescription="carrousel"
-              className="overflow-hidden rounded-2xl border bg-surface shadow-sm"
-            >
-              {/* DIV 1 fusionné avec le message bonjour : fixe, élégant, ne change jamais */}
-              <div className="relative overflow-hidden bg-gradient-to-br from-brand via-brand/90 to-accent p-4 text-white sm:p-5">
-                <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/15 blur-2xl" />
-                <div className="pointer-events-none absolute -bottom-20 left-1/3 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
-                <div className="relative flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/80">
-                      {date} · {time} · {t('Tableau de bord')}
-                    </p>
-                    <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
-                      {hello} {name}
-                    </h1>
-                    <p className="mt-0.5 text-sm text-white/85">
-                      {t(views[cur].label)} · {t('Page')} {cur + 1} / {views.length} — {t(views[cur].hint)}
-                    </p>
-                  </div>
-                  <div className="[&_button]:!border-white/25 [&_button]:!bg-white/10 [&_button]:!text-white [&_button]:backdrop-blur [&_button]:hover:!bg-white/20">
-                    <PageTabs view={cur} count={views.length} onChange={setView} />
-                  </div>
+            <section aria-label={t('Tableau de bord paginé')} aria-roledescription="carrousel">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-[10px] font-medium uppercase text-sub">
+                    <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                    {date} · {time}
+                  </p>
+                  <h1 className="mt-1 text-[22px] font-bold tracking-tight text-ink sm:text-2xl">
+                    {t('Tableau de bord')}
+                  </h1>
+                  <p className="mt-0.5 text-sm text-sub">
+                    {hello} {name} · {t(views[cur].hint)}
+                  </p>
                 </div>
-                {quick.length > 0 && (
-                  <div className="relative mt-3 flex flex-wrap gap-2">
-                    {quick.slice(0, 4).map((x) => (
-                      <Link
-                        key={x.t}
-                        to={x.to}
-                        className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-2 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/25"
-                      >
-                        {x.i}
-                        {t(x.t)}
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                <PageTabs view={cur} count={views.length} onChange={setView} />
               </div>
-
-              {/* DIV 2 : seule zone qui change — Précédent remplace Suivant */}
-              <div className="p-4 print:hidden sm:p-5">{views[cur].node}</div>
+              {quick.length > 0 && (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {quick.slice(0, 4).map((x) => (
+                    <Link
+                      key={x.t}
+                      to={x.to}
+                      className="inline-flex items-center gap-2 rounded-md border bg-surface px-3 py-2 text-xs font-medium text-ink transition hover:bg-sunken"
+                    >
+                      {x.i}
+                      {t(x.t)}
+                    </Link>
+                  ))}
+                </div>
+              )}
+              <div className="print:hidden">{views[cur].node}</div>
             </section>
           );
         })()}

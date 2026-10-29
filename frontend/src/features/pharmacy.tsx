@@ -1,3 +1,5 @@
+import { useCallback, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { ResourcePage, ResourceConfig } from '@/components/ResourcePage';
 import { Badge, PageHeader, StatusBadge } from '@/components/ui';
 import type { Medication, MedicationBatch, StockMovement } from '@/lib/types';
@@ -178,14 +180,71 @@ const moveCfg: ResourceConfig<StockMovement> = {
 
 export function PharmacyPage() {
   useLanguage();
+  const [createActions, setCreateActions] = useState<{
+    med: (() => void) | null;
+    batch: (() => void) | null;
+    move: (() => void) | null;
+  }>({ med: null, batch: null, move: null });
+  const registerMed = useCallback(
+    (open: (() => void) | null) => setCreateActions((actions) => ({ ...actions, med: open })),
+    [],
+  );
+  const registerBatch = useCallback(
+    (open: (() => void) | null) => setCreateActions((actions) => ({ ...actions, batch: open })),
+    [],
+  );
+  const registerMove = useCallback(
+    (open: (() => void) | null) => setCreateActions((actions) => ({ ...actions, move: open })),
+    [],
+  );
   return (
     <>
       <PageHeader title="Pharmacie" subtitle="Médicaments, lots et mouvements de stock" />
       <Tabs
+        actions={(activeTabId) => {
+          const action = {
+            med: { label: 'Nouveau médicament', onClick: createActions.med },
+            batch: { label: 'Nouveau lot', onClick: createActions.batch },
+            move: { label: 'Nouveau mouvement', onClick: createActions.move },
+          }[activeTabId];
+          return action?.onClick ? (
+            <button className="btn btn-primary" onClick={action.onClick}>
+              <Plus className="h-4 w-4" />
+              {t(action.label)}
+            </button>
+          ) : null;
+        }}
         tabs={[
-          { id: 'med', label: 'Médicaments', node: <ResourcePage cfg={medCfg} /> },
-          { id: 'batch', label: 'Lots', node: <ResourcePage cfg={batchCfg} /> },
-          { id: 'move', label: 'Mouvements', node: <ResourcePage cfg={moveCfg} /> },
+          {
+            id: 'med',
+            label: 'Médicaments',
+            node: (
+              <ResourcePage
+                cfg={{ ...medCfg, hideCreateButton: true }}
+                onCreateActionReady={registerMed}
+              />
+            ),
+          },
+          {
+            id: 'batch',
+            label: 'Lots',
+            node: (
+              <ResourcePage
+                cfg={{ ...batchCfg, hideCreateButton: true }}
+                onCreateActionReady={registerBatch}
+              />
+            ),
+          },
+          {
+            id: 'move',
+            label: 'Mouvements',
+            node: (
+              <ResourcePage
+                cfg={{ ...moveCfg, hideCreateButton: true }}
+                onCreateActionReady={registerMove}
+              />
+            ),
+          },
         ]}
       />
     </>

@@ -141,15 +141,17 @@ class LogoutView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             token.blacklist()
-            logger.info(
-                f"User {request.user.id} logged out and refresh token blacklisted"
-            )
-            return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             logger.warning(f"Failed to blacklist token: {e}")
             return Response(
                 {"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST
             )
+        request.user.last_seen_at = None
+        request.user.save(update_fields=["last_seen_at"])
+        logger.info(
+            f"User {request.user.id} logged out and refresh token blacklisted"
+        )
+        return Response(status=status.HTTP_205_RESET_CONTENT)
 
 
 @extend_schema(request=PasswordResetSerializer, responses={200: DETAIL_RESPONSE})
@@ -216,6 +218,23 @@ class ProfileView(APIView):
     def get(self, request):
         # On passe le request pour que l'URL de l'avatar soit absolue.
         return Response(UserSerializer(request.user, context={"request": request}).data)
+
+
+@extend_schema(
+    request=None,
+    responses={200: inline_serializer("PresenceResponse", {"is_online": drf_serializers.BooleanField()})},
+)
+class PresenceHeartbeatView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        if request.user.status != User.Status.ACTIVE:
+            raise PermissionDenied("Un compte inactif ne peut pas signaler sa présence.")
+        now = timezone.now()
+        if request.user.last_seen_at is None or request.user.last_seen_at < now - timedelta(seconds=20):
+            request.user.last_seen_at = now
+            request.user.save(update_fields=["last_seen_at"])
+        return Response({"is_online": True})
 
 
 # Fréquence minimale entre deux changements de mot de passe.
@@ -581,6 +600,9 @@ class UserViewSet(
 
         old = snapshot_user(target)
         user = serializer.save()
+        if "status" in data and data["status"] != User.Status.ACTIVE:
+            user.last_seen_at = None
+            user.save(update_fields=["last_seen_at"])
         # Réactivation : on réinitialise le compteur d'échecs et le verrou.
         if data.get("status") == User.Status.ACTIVE and (
             user.failed_login_attempts or user.lockout_until
@@ -657,7 +679,8 @@ class UserViewSet(
         _ensure_not_last_active_admin(user, next_status=User.Status.INACTIVE)
         old = snapshot_user(user)
         user.status = User.Status.INACTIVE
-        user.save(update_fields=["status", "updated_at"])
+        user.last_seen_at = None
+        user.save(update_fields=["status", "last_seen_at", "updated_at"])
         log_user_action(
             actor=request.user,
             action=AuditLog.Action.DEACTIVATE,

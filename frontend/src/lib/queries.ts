@@ -8,12 +8,18 @@ const clean = (p: Params) =>
     Object.entries(p).filter(([, v]) => v !== '' && v !== undefined && v !== null),
   );
 
-export function useList<T>(path: string, params: Params = {}, enabled = true) {
+export function useList<T>(
+  path: string,
+  params: Params = {},
+  enabled = true,
+  refetchInterval?: number,
+) {
   return useQuery({
     queryKey: [path, 'list', clean(params)],
     queryFn: async () => (await api.get<Paginated<T>>(`/${path}/`, { params: clean(params) })).data,
     placeholderData: keepPreviousData,
     enabled,
+    refetchInterval,
   });
 }
 export function useOne<T>(path: string, id?: string | number, enabled = true) {

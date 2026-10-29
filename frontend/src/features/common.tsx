@@ -36,7 +36,7 @@ export function Tabs({
     <>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div
-          className="flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-xl bg-sunken p-1"
+          className="flex min-w-0 flex-1 gap-1 overflow-x-auto rounded-lg bg-sunken p-1"
           role="tablist"
         >
           {tabs.map((t) => (
@@ -46,7 +46,7 @@ export function Tabs({
               aria-selected={id === t.id}
               onClick={() => setId(t.id)}
               className={clsx(
-                'whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold transition',
+                'whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition',
                 id === t.id ? 'bg-surface text-ink shadow-sm' : 'text-sub hover:text-ink',
               )}
             >
