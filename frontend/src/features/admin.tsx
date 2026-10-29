@@ -1,6 +1,6 @@
 import { ResourcePage, ResourceConfig } from '@/components/ResourcePage';
 import type { FieldDef } from '@/components/FormModal';
-import { Badge, StatusBadge, PageHeader, DataTable, Pagination, Column } from '@/components/ui';
+import { Badge, StatusBadge, PageHeader, DataTable, Pagination, Column, TONES } from '@/components/ui';
 import { Tabs } from './common';
 import { useList, useAction } from '@/lib/queries';
 import { useAuth } from '@/lib/auth';
@@ -75,6 +75,15 @@ function UserActions({ u }: { u: User }) {
   );
 }
 
+const ROLE_TONE: Record<Role, keyof typeof TONES> = {
+  ADMIN: 'bad',
+  DOCTOR: 'info',
+  PHARMACIST: 'ok',
+  LABORANT: 'mute',
+  RECEPTIONIST: 'warn',
+  CASHIER: 'warn',
+};
+
 const userCfg: ResourceConfig<User> = {
   path: 'auth/users',
   createPath: 'auth/register',
@@ -109,7 +118,7 @@ const userCfg: ResourceConfig<User> = {
       hideOnMobile: true,
     },
     { key: 'e', header: 'Email', render: (u) => u.email },
-    { key: 'r', header: 'Rôle', render: (u) => <Badge tone="info">{label(u.role)}</Badge> },
+    { key: 'r', header: 'Rôle', render: (u) => <Badge tone={ROLE_TONE[u.role] ?? 'mute'}>{label(u.role)}</Badge> },
     { key: 's', header: 'Statut', render: (u) => <StatusBadge value={u.status} /> },
   ],
   fields: [

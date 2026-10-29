@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 
 from patients.models import Patient
-from pharmacy.models import Medication, MedicationBatch
+from pharmacy.models import Medication, MedicationBatch, StockMovement
 from users.roles import (
     ALL_STAFF,
     CASHIER,
@@ -259,3 +259,38 @@ class MedicationStockTests(APITestCase):
         self.assertEqual(resp.status_code, 201)
         self.assertEqual(resp.data["current_stock"], 0)
         self.assertTrue(resp.data["is_low_stock"])
+
+
+class MedicationDeletionTests(APITestCase):
+    """Un médicament référencé ne doit pas être supprimable en silencieux (500)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        # DELETE sur les médicaments est réservé à l'ADMIN (delete_roles non déclaré)
+        cls.admin = make_user("ADMIN")
+        cls.medication = Medication.objects.create(name="Xenociline", minimum_stock=0)
+        cls.batch = MedicationBatch.objects.create(
+            medication=cls.medication, batch_number="B1", quantity=10
+        )
+
+    def setUp(self):
+        self.client.force_authenticate(self.admin)
+
+    def test_delete_referenced_medication_returns_409(self):
+        StockMovement.objects.create(
+            medication=self.medication,
+            batch=self.batch,
+            movement_type=StockMovement.MovementType.IN,
+            quantity=5,
+            performed_by=self.admin,
+        )
+        resp = self.client.delete(f"/api/medications/{self.medication.pk}/")
+        self.assertEqual(resp.status_code, 409)
+        self.assertIn("mouvement de stock", resp.data["detail"])
+        # le médicament doit rester en base
+        self.assertTrue(Medication.objects.filter(pk=self.medication.pk).exists())
+
+    def test_delete_unreferenced_medication_returns_204(self):
+        resp = self.client.delete(f"/api/medications/{self.medication.pk}/")
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(Medication.objects.filter(pk=self.medication.pk).exists())

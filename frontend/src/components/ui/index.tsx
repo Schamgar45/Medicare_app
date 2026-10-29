@@ -12,7 +12,7 @@ export const Spinner = ({ className }: { className?: string }) => (
   <Loader2 className={clsx('h-4 w-4 animate-spin', className)} />
 );
 
-const TONES: Record<string, string> = {
+export const TONES: Record<string, string> = {
   ok: 'bg-ok/12 text-ok',
   warn: 'bg-warn/15 text-warn',
   bad: 'bg-bad/12 text-bad',

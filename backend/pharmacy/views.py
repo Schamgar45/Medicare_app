@@ -1,7 +1,9 @@
 import django_filters
-from rest_framework import serializers, viewsets
+from rest_framework import serializers, status, viewsets
+from rest_framework.response import Response
 from django.db import transaction
 from django.db.models import F, Sum
+from django.db.models.deletion import RestrictedError
 from django.db.models.functions import Coalesce
 
 from users.roles import CASHIER, DOCTOR, PHARMACIST, RECEPTIONIST
@@ -43,6 +45,59 @@ class MedicationViewSet(viewsets.ModelViewSet):
     search_fields = ["name", "generic_name", "manufacturer"]
     ordering_fields = ["id", "name", "unit_price", "current_stock"]
     ordering = ["name"]
+
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            self.perform_destroy(instance)
+        except RestrictedError as exc:
+            return Response(
+                {
+                    "detail": (
+                        "Impossible de supprimer ce médicament : "
+                        f"{self._restricted_error_message(exc)}"
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @staticmethod
+    def _restricted_error_message(exc):
+        """
+        Construit un message lisible listant les objets qui bloquent la
+        suppression (foreign keys with on_delete=RESTRICT).
+        """
+        # exc.args est (message, ensemble_des_objets_bloquants)
+        blocked = ()
+        for candidate in exc.args:
+            if isinstance(candidate, (set, list, tuple)) and candidate:
+                first = next(iter(candidate))
+                if not isinstance(first, str):
+                    blocked = candidate
+                    break
+
+        labels = {
+            "prescriptionitem": "élément de prescription",
+            "stockmovement": "mouvement de stock",
+        }
+        counts = {}
+        for obj in blocked:
+            key = labels.get(obj._meta.model_name, obj._meta.model_name)
+            counts[key] = counts.get(key, 0) + 1
+
+        parts = [
+            f"{count} {label}" + ("s" if count > 1 else "")
+            for label, count in counts.items()
+        ]
+
+        if not parts:
+            return "des dépendances bloquent toujours sa suppression."
+        return (
+            "il est encore référencé par " + " et ".join(parts)
+            + ". Supprimez ces dépendances avant de pouvoir supprimer le médicament."
+        )
 
 
 class MedicationBatchViewSet(viewsets.ModelViewSet):

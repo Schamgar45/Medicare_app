@@ -100,6 +100,7 @@ const patientCfg: ResourceConfig<Patient> = {
       name: 'blood_group',
       label: 'Groupe sanguin',
       type: 'select',
+      emptyLabel: 'Non spécifié',
       options: opts(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']),
       formStep: 'Informations médicales',
     },

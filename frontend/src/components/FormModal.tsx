@@ -38,6 +38,8 @@ export interface FieldDef {
   createOnly?: boolean;
   editOnly?: boolean;
   placeholder?: string;
+  /** Libellé affiché pour l'option vide d'un select non requis (ex. "Non spécifié"). */
+  emptyLabel?: string;
   /** Champ date : borne maximale (YYYY-MM-DD), au format ISO. */
   max?: string;
   /** Champ date : refuse toute valeur postérieure à aujourd'hui (ex. date de naissance). */
@@ -318,7 +320,11 @@ export function FormModal({
                 <select className="input" {...register(f.name)}>
                   {/* Pas de placeholder vide sur un select obligatoire : la
                         première option réelle est déjà présélectionnée. */}
-                  {!f.required && <option value="">—</option>}
+                  {!f.required && (
+                    <option value="">
+                      {f.emptyLabel ? t(f.emptyLabel) : 'Non spécifié'}
+                    </option>
+                  )}
                   {f.options?.map((o) => (
                     <option key={o.value} value={o.value}>
                       {t(o.label)}
