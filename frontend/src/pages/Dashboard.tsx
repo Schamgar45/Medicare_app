@@ -277,7 +277,11 @@ export default function DashboardPage() {
                 icon={<Users className="h-5 w-5" />}
                 label="Patients"
                 value={num(d.patients.total)}
-                hint={`+${d.patients.new_this_month} ce mois`}
+                hint={
+                  d.patients.new_this_month > 0
+                    ? `+${d.patients.new_this_month} ${t('ce mois')}`
+                    : ''
+                }
               />,
             );
           if (d.appointments)
@@ -297,7 +301,7 @@ export default function DashboardPage() {
                 icon={<Stethoscope className="h-5 w-5" />}
                 label="Consultations"
                 value={num(d.consultations.total)}
-                hint={`${d.consultations.today} aujourd'hui`}
+                hint={`${d.consultations.today} ${t('aujourd\'hui')}`}
               />,
             );
           if (d.doctors)
@@ -307,7 +311,7 @@ export default function DashboardPage() {
                 icon={<UserRound className="h-5 w-5" />}
                 label="Médecins"
                 value={num(d.doctors.total)}
-                hint={`${d.doctors.available} disponible${d.doctors.available > 1 ? 's' : ''}`}
+                hint={`${d.doctors.available} ${t('disponible')}${d.doctors.available > 1 ? 's' : ''}`}
                 tone="accent"
               />,
             );
@@ -328,7 +332,7 @@ export default function DashboardPage() {
                 icon={<Coins className="h-5 w-5" />}
                 label="Recettes du mois"
                 value={money(d.billing.revenue_this_month)}
-                hint={`Total ${money(d.billing.revenue_total)}`}
+                hint={`${t('Total')} ${money(d.billing.revenue_total)}`}
                 tone="accent"
               />,
             );
@@ -339,7 +343,7 @@ export default function DashboardPage() {
                 icon={<Wallet className="h-5 w-5" />}
                 label="Reste à encaisser"
                 value={money(d.billing.outstanding_balance)}
-                hint={`${d.billing.unpaid_invoices} facture${d.billing.unpaid_invoices > 1 ? 's' : ''}`}
+                hint={`${d.billing.unpaid_invoices} ${t('facture')}${d.billing.unpaid_invoices > 1 ? 's' : ''}`}
                 tone="bad"
               />,
             );
@@ -350,7 +354,7 @@ export default function DashboardPage() {
                 icon={<AlertTriangle className="h-5 w-5" />}
                 label="Stock bas"
                 value={num(d.pharmacy.low_stock_count)}
-                hint={`${d.pharmacy.expired_count} périmé(s) · ${d.pharmacy.expiring_soon_count} bientôt`}
+                hint={`${d.pharmacy.expired_count} ${t('périmé(s)')} · ${d.pharmacy.expiring_soon_count} ${t('bientôt')}`}
                 tone="warn"
               />,
             );

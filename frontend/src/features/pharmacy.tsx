@@ -119,14 +119,12 @@ const batchCfg: ResourceConfig<MedicationBatch> = {
 
 const moveCfg: ResourceConfig<StockMovement> = {
   path: 'stock-movements',
-  title: 'Mouvements',
+  title: 'Mouvements de stock',
   singular: 'Mouvement',
   writeRoles: ['PHARMACIST'],
-  canEdit: false,
-  canDelete: false,
   ordering: '-movement_date',
   embedded: true,
-  mobileTitle: (m) => m.medication_name,
+  mobileTitle: (m) => `${m.medication_name} · ${m.movement_type}`,
   filters: [
     {
       name: 'movement_type',

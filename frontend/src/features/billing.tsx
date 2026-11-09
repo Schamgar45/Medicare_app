@@ -17,7 +17,7 @@ import { api, apiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import { useOne, useRemove, useSave } from '@/lib/queries';
-import type { BillingItem, Invoice, InvoiceItem, Payment } from '@/lib/types';
+import type { BillingItem, Invoice, InvoiceItem, Medication, Payment } from '@/lib/types';
 import { fmtDate, fmtDateTime, fullName, money, opts } from '@/lib/format';
 import { t, useLanguage } from '@/lib/i18n';
 import { Tabs, patientRel, serviceRel } from './common';
@@ -512,23 +512,48 @@ export function InvoiceDetailPage() {
             },
             hint: 'Choisir un acte remplit la désignation et le prix.',
           },
+          {
+            name: 'medication',
+            label: 'Médicament (optionnel)',
+            type: 'relation',
+            full: true,
+            relation: {
+              path: 'medications',
+              label: (m: Medication) => `${m.name}${m.dosage ? ' · ' + m.dosage : ''} · ${money(m.unit_price)}`,
+              params: { is_active: true },
+            },
+            hint: 'Choisir un médicament remplit la désignation et le prix.',
+          },
           { name: 'description', label: 'Désignation', type: 'text', full: true },
           { name: 'quantity', label: 'Quantité', type: 'number', required: true },
           { name: 'unit_price', label: 'Prix unitaire', type: 'number', step: '0.01' },
         ]}
-        initial={{ billing_item: '', description: '', quantity: 1, unit_price: '' }}
+        initial={{ billing_item: '', medication: '', description: '', quantity: 1, unit_price: '' }}
         onSubmit={async (p) => {
-          let { description, unit_price } = p as { description: string; unit_price: number | null };
+          let { description, unit_price } = p as {
+            description: string;
+            unit_price: number | null;
+          };
+
+          // Acte facturable : on reprend sa désignation et son prix
           if (p.billing_item && (!description || unit_price === null)) {
             const b = (await api.get<BillingItem>(`/billing-items/${p.billing_item}/`)).data;
             description = description || b.name;
             unit_price = unit_price ?? Number(b.price);
           }
+
+          // Médicament : on reprend sa désignation et son prix unitaire
+          if (p.medication && (!description || unit_price === null)) {
+            const m = (await api.get<Medication>(`/medications/${p.medication}/`)).data;
+            description = description || m.name;
+            unit_price = unit_price ?? Number(m.unit_price);
+          }
+
           if (!description)
             throw Object.assign(new Error('x'), {
               response: {
                 status: 400,
-                data: { description: ['Indiquez une désignation ou un acte.'] },
+                data: { description: ['Indiquez une désignation, un acte ou un médicament.'] },
               },
             });
           await saveItem.mutateAsync({

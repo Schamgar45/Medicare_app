@@ -312,31 +312,31 @@ export function ProfilePage() {
             {t('Informations personnelles')}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Nom d'utilisateur">
+            <Field label={t("Nom d'utilisateur")}>
               <input
                 className="input"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
               />
             </Field>
-            <Field label="Rôle" hint="Modifiable uniquement par un administrateur.">
+            <Field label={t("Rôle")} hint={t("Modifiable uniquement par un administrateur.")}>
               <input className="input bg-sunken" value={label(user.role)} disabled />
             </Field>
-            <Field label="Prénom">
+            <Field label={t("Prénom")}>
               <input
                 className="input"
                 value={form.first_name}
                 onChange={(e) => setForm({ ...form, first_name: e.target.value })}
               />
             </Field>
-            <Field label="Nom">
+            <Field label={t("Nom")}>
               <input
                 className="input"
                 value={form.last_name}
                 onChange={(e) => setForm({ ...form, last_name: e.target.value })}
               />
             </Field>
-            <Field label="E-mail" required error={infoErrors.email}>
+            <Field label={t("E-mail")} required error={infoErrors.email}>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" />
                 <input
@@ -348,9 +348,9 @@ export function ProfilePage() {
               </div>
             </Field>
             <Field
-              label="Téléphone"
+              label={t("Téléphone")}
               error={infoErrors.phone}
-              hint="Format international, ex. +25779987654."
+              hint={t("Format international, ex. +25779987654.")}
             >
               <div className="relative">
                 <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" />
@@ -361,7 +361,7 @@ export function ProfilePage() {
                 />
               </div>
             </Field>
-            <Field label="Genre" required>
+            <Field label={t("Genre")} required>
               <select
                 className="input"
                 value={form.gender}
@@ -376,7 +376,7 @@ export function ProfilePage() {
             </Field>
             {emailChanged && (
               <Field
-                label="Mot de passe actuel"
+                label={t("Mot de passe actuel")}
                 required
                 error={infoErrors.current_password}
                 hint="Exigé pour confirmer le changement d'e-mail."
@@ -443,7 +443,7 @@ export function ProfilePage() {
           </div>
 
           <div className="space-y-4">
-            <Field label="Mot de passe actuel" required>
+            <Field label={t("Mot de passe actuel")} required>
               <PasswordInput
                 value={pw.old_password}
                 onChange={(v) => setPw({ ...pw, old_password: v })}
@@ -451,7 +451,7 @@ export function ProfilePage() {
                 disabled={!pwReady.allowed}
               />
             </Field>
-            <Field label="Nouveau mot de passe" required error={pwErrors.new_password}>
+            <Field label={t("Nouveau mot de passe")} required error={pwErrors.new_password}>
               <PasswordInput
                 value={pw.new_password}
                 onChange={(v) => setPw({ ...pw, new_password: v })}
@@ -461,7 +461,7 @@ export function ProfilePage() {
             </Field>
             <StrengthMeter value={pw.new_password} />
             <Field
-              label="Confirmer le nouveau mot de passe"
+              label={t("Confirmer le nouveau mot de passe")}
               required
               error={pwErrors.confirm_password}
             >

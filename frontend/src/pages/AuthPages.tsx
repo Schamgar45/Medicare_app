@@ -179,7 +179,7 @@ export function LoginPage() {
             const r = (err as any).response;
             setError(
               r?.status === 400 || r?.status === 401
-                ? 'Email ou mot de passe incorrect.'
+                ? t('Email ou mot de passe incorrect.')
                 : apiError(err).message,
             );
           } finally {
