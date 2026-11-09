@@ -46,7 +46,16 @@ L'API répond sur <http://127.0.0.1:8000/api/> et Swagger sur <http://127.0.0.1:
 | `USE_POSTGRES` | `false` | `true` pour utiliser PostgreSQL |
 | `DB_NAME` `DB_USER` `DB_PASSWORD` `DB_HOST` | — | requis si `USE_POSTGRES=true` |
 | `DB_PORT` | `5432` | port PostgreSQL |
+| `EMAIL_HOST` | vide | serveur SMTP; vide = e-mails affichés dans la console |
+| `EMAIL_PORT` | `587` | port SMTP |
+| `EMAIL_USE_TLS` | `true` | activer STARTTLS (mettre `false` avec SSL) |
+| `EMAIL_USE_SSL` | `false` | activer SSL implicite (ne pas combiner avec TLS) |
+| `EMAIL_HOST_USER` `EMAIL_HOST_PASSWORD` | — | identifiants SMTP; garder le mot de passe uniquement dans `.env` |
+| `DEFAULT_FROM_EMAIL` | utilisateur SMTP ou adresse d'exemple | adresse expéditrice autorisée par le fournisseur |
+| `EMAIL_TIMEOUT` | `10` | délai maximal de connexion SMTP, en secondes |
 | `PASSWORD_RESET_URL` | `http://localhost:5173/reset-password` | page du front qui reçoit le lien de réinitialisation |
+
+Pour recevoir les e-mails dans une boîte avec Brevo, renseigner les paramètres SMTP dans `backend/.env` : serveur `smtp-relay.brevo.com`, port `587`, TLS activé et SSL désactivé. Dans Brevo, utiliser l'identifiant SMTP et la **clé SMTP** (pas la clé API) pour `EMAIL_HOST_USER` et `EMAIL_HOST_PASSWORD`. `DEFAULT_FROM_EMAIL` doit être une adresse expéditrice vérifiée dans Brevo. Ne pas partager ni commiter la clé SMTP.
 
 ## Tests
 

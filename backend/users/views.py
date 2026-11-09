@@ -3,6 +3,7 @@ import logging
 from datetime import timedelta
 
 from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
@@ -38,6 +39,62 @@ logger = logging.getLogger("users.auth")
 DETAIL_RESPONSE = inline_serializer(
     "DetailResponse", {"detail": drf_serializers.CharField()}
 )
+
+
+def _send_account_created_email(user, email, username, password):
+    """
+    Envoie un email de bienvenue avec les informations du compte créé.
+    Utilise le template HTML de projet (backend/templates/emails/account_created.html).
+    """
+    subject = f"[MediCare Connect] Bienvenue — Votre compte a été créé"
+
+    html_message = render_to_string(
+        "emails/account_created.html",
+        {
+            "user": user,
+            "email": email,
+            "username": username,
+            "password": password,
+            "password_reset_url": settings.PASSWORD_RESET_URL,
+            "next_url": None,
+        },
+    )
+
+    send_mail(
+        subject=subject,
+        message="Votre compte MediCare Connect a été créé avec succès.",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=False,
+        html_message=html_message,
+    )
+
+
+def _send_password_reset_email(user, reset_link):
+    """
+    Envoie un email de réinitialisation de mot de passe avec un template HTML.
+    """
+    subject = "Réinitialisation de votre mot de passe MediCare Connect"
+
+    html_message = render_to_string(
+        "emails/password_reset.html",
+        {
+            "user": user,
+            "reset_link": reset_link,
+        },
+    )
+
+    send_mail(
+        subject=subject,
+        message=(
+            "Vous avez reçu cet email car une demande de réinitialisation de mot de "
+            f"passe a été effectuée. Utilisez ce lien : {reset_link}"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=False,
+        html_message=html_message,
+    )
 
 
 def _active_admin_count():
@@ -103,8 +160,15 @@ class RegisterView(APIView):
             new=snapshot_user(user),
             request=request,
         )
+        # Envoi de l'email de bienvenue avec les infos du compte
+        _send_account_created_email(
+            user,
+            serializer.validated_data.get("email"),
+            user.username,
+            serializer.validated_data.get("password"),
+        )
         logger.info(
-            "Account created: %s (role=%s) by %s",
+            "Account created and welcome email queued: %s (role=%s) by %s",
             user.username,
             user.role,
             request.user,
@@ -178,17 +242,9 @@ class PasswordResetView(APIView):
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = PasswordResetTokenGenerator().make_token(user)
             reset_link = f"{settings.PASSWORD_RESET_URL}?uid={uid}&token={token}"
-            message = f"Use the link to reset your password: {reset_link}"
-            send_mail(
-                subject="Password reset",
-                message=message,
-                from_email=(
-                    settings.DEFAULT_FROM_EMAIL
-                    if hasattr(settings, "DEFAULT_FROM_EMAIL")
-                    else None
-                ),
-                recipient_list=[user.email],
-                fail_silently=False,
+            _send_password_reset_email(
+                user=user,
+                reset_link=reset_link,
             )
             logger.info(f"Password reset requested for user {user.id}")
 

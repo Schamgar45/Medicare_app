@@ -1,0 +1,255 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compte créé — MediCare Connect</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background-color: #ffffff;
+    }
+
+    .header {
+      text-align: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0f766e;
+      letter-spacing: -0.05em;
+    }
+
+    .badge {
+      display: inline-block;
+      background-color: #0f766e;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 12px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background-color: #f8fafc;
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .step {
+      display: inline-block;
+      background-color: #0f766e;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    .list {
+      background-color: #f8fafc;
+      border-left: 4px solid #0f766e;
+      padding: 16px 18px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 15px;
+      color: #334155;
+    }
+
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .list-item:last-child {
+      border-bottom: none;
+    }
+
+    .list-item .label {
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .list-item .value {
+      color: #1e293b;
+      font-weight: 500;
+    }
+
+    .cta {
+      display: inline-block;
+      background-color: #0f766e;
+      color: #ffffff;
+      text-decoration: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+
+    .cta:hover {
+      background-color: #0c4a6e;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .actions a {
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .action-secondary {
+      background-color: #e2e8f0;
+      color: #334155;
+    }
+
+    .action-secondary:hover {
+      background-color: #cbd5e1;
+    }
+
+    .info {
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #92400e;
+      margin-bottom: 20px;
+    }
+
+    .info strong {
+      color: #92400e;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .footer {
+      background-color: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .footer a {
+      color: #0f766e;
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px 16px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      .actions {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .actions a {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">MediCare Connect</div>
+      <div class="logo">MediCare Connect</div>
+    </div>
+
+    <div class="card">
+      <span class="step">Étape 1</span>
+      <p class="message">
+        Bonjour {{ user.first_name|default:"Cher" }},
+      </p>
+      <p class="message">
+        Votre compte MediCare Connect a été créé avec succès. Voici les
+        informations de votre compte :
+      </p>
+
+      <div class="list">
+        <div class="list-item">
+          <span class="label">Email</span>
+          <span class="value">{{ email }}</span>
+        </div>
+        <div class="list-item">
+          <span class="label">Nom d'utilisateur</span>
+          <span class="value">{{ username }}</span>
+        </div>
+        <div class="list-item">
+          <span class="label">Mot de passe provisoire</span>
+          <span class="value">{{ password }}</span>
+        </div>
+      </div>
+
+      <div class="info">
+        <p style="margin:0 0 10px 0;"><strong>Important :</strong></p>
+        <p style="margin:0;">
+          Vous allez définir votre propre mot de passe dès maintenant. Cliquez
+          sur le bouton ci-dessous pour vous connecter et commencer.
+        </p>
+      </div>
+
+      <div class="actions">
+        <a href="{% if next_url %}{{ next_url }}{% else %}{{ password_reset_url }}{% endif %}" class="cta">
+          Se connecter maintenant
+        </a>
+        <a href="mailto:support@example.com" class="action-secondary">
+          Besoin d'aide ?
+        </a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p style="margin:0 0 8px 0;">MediCare Connect</p>
+      <p style="margin:0;">
+        Centre Médicale Connecté<br />
+        <a href="mailto:support@example.com" style="color:#64748b; text-decoration:underline;">support@example.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

@@ -57,6 +57,33 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    def validate(self, attrs):
+        billing_item = attrs.get("billing_item")
+        medication = attrs.get("medication")
+        unit_price = attrs.get("unit_price")
+        description = attrs.get("description")
+
+        # Auto-remplir le prix et la désignation depuis un acte du catalogue
+        if billing_item and not unit_price:
+            attrs["unit_price"] = billing_item.price
+        if billing_item and not description:
+            attrs["description"] = billing_item.name
+
+        # Auto-remplir le prix et la désignation depuis un médicament
+        if medication and not unit_price:
+            attrs["unit_price"] = medication.unit_price
+        if medication and not description:
+            attrs["description"] = medication.name
+
+        if not description:
+            raise serializers.ValidationError(
+                {"description": "Indiquez une désignation, un acte ou un médicament."}
+            )
+        if unit_price is None:
+            attrs["unit_price"] = 0
+
+        return attrs
+
 
 class InvoicePatientSerializer(serializers.ModelSerializer):
     """Identité du patient telle qu'elle s'imprime sur la facture."""

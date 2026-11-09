@@ -65,7 +65,6 @@ class MedicationBatchSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             "id",
-            "quantity",
             "created_at",
         ]
 
@@ -82,6 +81,11 @@ class StockMovementSerializer(serializers.ModelSerializer):
                 {"batch": "Batch must belong to the selected medication."}
             )
         return attrs
+
+    def validate_quantity(self, value):
+        if value < 0:
+            raise serializers.ValidationError("La quantité ne peut pas être négative.")
+        return value
 
     class Meta:
         model = StockMovement
