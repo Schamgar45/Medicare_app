@@ -26,15 +26,10 @@ import type { Appointment } from '@/lib/types';
 import { fmtTime, fullName, label, money, num, greeting } from '@/lib/format';
 import { t, useLanguage } from '@/lib/i18n';
 
-const Monthly = lazy(() =>
-  import('@/components/DashboardCharts').then((m) => ({ default: m.Monthly })),
-);
-const Donut = lazy(() =>
-  import('@/components/DashboardCharts').then((m) => ({ default: m.Donut })),
-);
-const ByStatus = lazy(() =>
-  import('@/components/DashboardCharts').then((m) => ({ default: m.ByStatus })),
-);
+const dashboardCharts = import('@/components/DashboardCharts');
+const Monthly = lazy(() => dashboardCharts.then((m) => ({ default: m.Monthly })));
+const Donut = lazy(() => dashboardCharts.then((m) => ({ default: m.Donut })));
+const ByStatus = lazy(() => dashboardCharts.then((m) => ({ default: m.ByStatus })));
 
 function ChartCard({
   title,

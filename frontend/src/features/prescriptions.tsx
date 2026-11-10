@@ -97,9 +97,11 @@ export function PrescriptionDetailPage() {
   const { can } = useAuth();
   const q = useOne<Prescription>('prescriptions', id);
   const [adding, setAdding] = useState(false);
+  const [dispensingPartial, setDispensingPartial] = useState(false);
   const saveItem = useSave('prescription-items');
   const removeItem = useRemove('prescription-items');
   const setStatus = useAction('prescriptions');
+  const dispenseAction = useAction('prescriptions');
 
   if (q.isLoading) return <Skeleton className="h-64" />;
   const rx = q.data;
@@ -115,6 +117,26 @@ export function PrescriptionDetailPage() {
       toast.err(apiError(e).message);
     }
   };
+  const dispense = async (status: 'PARTIALLY_DISPENSED' | 'DISPENSED', items?: unknown[]) => {
+    await dispenseAction.mutateAsync({
+      url: `${rx.id}/dispense/`,
+      method: 'post',
+      data: { status, ...(items ? { items } : {}) },
+    });
+    await q.refetch();
+    toast.ok('Délivrance enregistrée');
+  };
+  const partialDispenseFields = rx.items.map((item) => ({
+    name: `item_${item.id}`,
+    label: `${item.medication_name} · prescrit : ${item.quantity ?? '—'}`,
+    type: 'number' as const,
+    required: true,
+    step: '1',
+    full: true,
+  }));
+  const partialDispenseInitial = Object.fromEntries(
+    rx.items.map((item) => [`item_${item.id}`, item.dispensed_quantity]),
+  );
   const cols: Column<PrescriptionItem>[] = [
     {
       key: 'm',
@@ -198,12 +220,17 @@ export function PrescriptionDetailPage() {
             )}
             {can('PHARMACIST') && ['VALIDATED', 'PARTIALLY_DISPENSED'].includes(rx.status) && (
               <>
-                <button className="btn btn-accent btn-sm" onClick={() => change('DISPENSED')}>
+                <button
+                  className="btn btn-accent btn-sm"
+                  onClick={() =>
+                    dispense('DISPENSED').catch((e) => toast.err(apiError(e).message))
+                  }
+                >
                   Marquer comme délivrée
                 </button>
                 <button
                   className="btn btn-ghost btn-sm"
-                  onClick={() => change('PARTIALLY_DISPENSED')}
+                  onClick={() => setDispensingPartial(true)}
                 >
                   Partiellement délivrée
                 </button>
@@ -263,6 +290,24 @@ export function PrescriptionDetailPage() {
           await saveItem.mutateAsync({ data: { ...p, prescription: rx.id } });
           await q.refetch();
           toast.ok('Médicament ajouté');
+        }}
+      />
+      <FormModal
+        open={dispensingPartial}
+        onClose={() => setDispensingPartial(false)}
+        title="Quantités réellement délivrées"
+        editing={false}
+        wide={false}
+        fields={partialDispenseFields}
+        initial={partialDispenseInitial}
+        onSubmit={async (values) => {
+          await dispense(
+            'PARTIALLY_DISPENSED',
+            rx.items.map((item) => ({
+              id: item.id,
+              dispensed_quantity: Number(values[`item_${item.id}`]),
+            })),
+          );
         }}
       />
     </>

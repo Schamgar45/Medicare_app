@@ -46,7 +46,9 @@ class Invoice(models.Model):
 
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
-    discount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    discount = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0, null=True, blank=True
+    )
 
     tax = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
@@ -92,6 +94,46 @@ class InvoiceItem(models.Model):
 
     medication = models.ForeignKey(
         "pharmacy.Medication",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoice_items",
+    )
+
+    consultation = models.ForeignKey(
+        "consultations.Consultation",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoice_items",
+    )
+
+    lab_request = models.ForeignKey(
+        "laboratory.LabRequest",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoice_items",
+    )
+
+    prescription_item = models.ForeignKey(
+        "prescriptions.PrescriptionItem",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoice_items",
+    )
+
+    doctor = models.ForeignKey(
+        "doctor.Doctor",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoice_items",
+    )
+
+    service = models.ForeignKey(
+        "services.MedicalService",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -166,7 +208,7 @@ class Payment(models.Model):
 def _recalculate_invoice_totals(self):
     subtotal = self.items.aggregate(total=Sum("total"))["total"] or 0
     self.subtotal = subtotal
-    self.total = max(subtotal - self.discount + self.tax, 0)
+    self.total = max(subtotal - (self.discount or 0) + self.tax, 0)
     self.amount_paid = (
         self.payments.filter(status=self.payments.model.Status.COMPLETED).aggregate(
             total=Sum("amount")

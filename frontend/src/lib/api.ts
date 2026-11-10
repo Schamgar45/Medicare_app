@@ -10,23 +10,26 @@ export interface Tokens {
 }
 export const tokenStore = {
   get(): Tokens | null {
-    for (const st of [localStorage, sessionStorage]) {
-      try {
-        const v = st.getItem(KEY);
-        if (v) return JSON.parse(v);
-      } catch {
-        /* ignore */
-      }
+    try {
+      const v = sessionStorage.getItem(KEY);
+      if (v) return JSON.parse(v);
+    } catch {
+      /* ignore */
+    }
+    // Ancienne session persistante (« Se souvenir de moi ») : on la purge pour
+    // que la fermeture de l'onglet détruise bien la session.
+    try {
+      localStorage.removeItem(KEY);
+    } catch {
+      /* ignore */
     }
     return null;
   },
-  /** remember=true : session conservée après fermeture du navigateur ; false : jusqu'à la fermeture de l'onglet. */
-  set(t: Tokens, remember?: boolean) {
+  /** La session vit uniquement dans l'onglet courant (sessionStorage). */
+  set(t: Tokens) {
     try {
-      const keepLocal = remember ?? !!localStorage.getItem(KEY);
-      const [on, off] = keepLocal ? [localStorage, sessionStorage] : [sessionStorage, localStorage];
-      on.setItem(KEY, JSON.stringify(t));
-      off.removeItem(KEY);
+      sessionStorage.setItem(KEY, JSON.stringify(t));
+      localStorage.removeItem(KEY);
     } catch {
       /* stockage indisponible */
     }
@@ -40,6 +43,45 @@ export const tokenStore = {
     }
   },
 };
+
+const SESSION_CLOSE_URL = `${BASE}/api/auth/session/close/`;
+
+/**
+ * Détruit aussi la session côté serveur quand l'onglet est fermé.
+ *
+ * `pagehide` est également déclenché lors d'un rechargement (F5) : dans ce cas
+ * l'onglet reste visible, on ne révoque donc pas le jeton pour laisser la
+ * session survivre au rechargement. À la fermeture, `visibilitychange` passe
+ * d'abord l'onglet en « hidden ».
+ */
+export function watchSessionClose(): () => void {
+  let hidden = document.visibilityState === 'hidden';
+
+  const onVisibilityChange = () => {
+    hidden = document.visibilityState === 'hidden';
+  };
+
+  const onPageHide = (event: PageTransitionEvent) => {
+    if (event.persisted) return; // onglet gardé en bfcache : pas une fermeture
+    if (!hidden) return; // F5 / rechargement : la session doit continuer
+    const t = tokenStore.get();
+    if (!t?.refresh) return;
+    try {
+      // text/plain = requête « simple » : pas de préflight CORS pendant l'unload.
+      const body = new Blob([JSON.stringify({ refresh: t.refresh })], { type: 'text/plain' });
+      navigator.sendBeacon(SESSION_CLOSE_URL, body);
+    } catch {
+      /* le navigateur refuse le beacon */
+    }
+  };
+
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  window.addEventListener('pagehide', onPageHide);
+  return () => {
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    window.removeEventListener('pagehide', onPageHide);
+  };
+}
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const t = tokenStore.get();

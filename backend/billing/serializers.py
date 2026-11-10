@@ -4,6 +4,7 @@ from users.numbering import AutoNumberMixin
 
 from patients.models import Patient
 from services.models import MedicalService
+from users.brief import DoctorBriefSerializer
 
 from .models import (
     BillingItem,
@@ -34,7 +35,45 @@ class BillingItemSerializer(serializers.ModelSerializer):
         ]
 
 
+class InvoiceServiceSerializer(serializers.ModelSerializer):
+    """Département : le nom et la couleur du cachet viennent d'ici."""
+
+    class Meta:
+        model = MedicalService
+        fields = ["id", "name", "theme_color"]
+        read_only_fields = fields
+
+
 class InvoiceItemSerializer(serializers.ModelSerializer):
+    source_type = serializers.SerializerMethodField()
+    source_reference = serializers.SerializerMethodField()
+    doctor_name = serializers.SerializerMethodField()
+    service_detail = InvoiceServiceSerializer(source="service", read_only=True)
+    doctor_detail = DoctorBriefSerializer(source="doctor", read_only=True)
+
+    def get_source_type(self, obj) -> str:
+        if obj.consultation_id:
+            return "CONSULTATION"
+        if obj.lab_request_id:
+            return "LAB"
+        if obj.prescription_item_id:
+            return "PHARMACY"
+        return "MANUAL"
+
+    def get_source_reference(self, obj) -> str | None:
+        if obj.consultation_id:
+            return obj.consultation.consultation_number
+        if obj.lab_request_id:
+            return obj.lab_request.request_number
+        if obj.prescription_item_id:
+            return obj.prescription_item.prescription.prescription_number
+        return None
+
+    def get_doctor_name(self, obj) -> str | None:
+        if obj.doctor_id is None:
+            return None
+        user = obj.doctor.user
+        return user.get_full_name() or user.username
 
     class Meta:
         model = InvoiceItem
@@ -48,12 +87,19 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
             "quantity",
             "unit_price",
             "total",
+            "source_type",
+            "source_reference",
+            "doctor_name",
+            "doctor_detail",
+            "service",
+            "service_detail",
             "created_at",
         ]
 
         read_only_fields = [
             "id",
             "total",
+            "service",
             "created_at",
         ]
 
@@ -91,15 +137,6 @@ class InvoicePatientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
         fields = ["id", "patient_number", "first_name", "last_name", "phone"]
-        read_only_fields = fields
-
-
-class InvoiceServiceSerializer(serializers.ModelSerializer):
-    """Département : le nom et la couleur du cachet viennent d'ici."""
-
-    class Meta:
-        model = MedicalService
-        fields = ["id", "name", "theme_color"]
         read_only_fields = fields
 
 

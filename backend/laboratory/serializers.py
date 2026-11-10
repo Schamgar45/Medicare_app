@@ -2,12 +2,13 @@ from rest_framework import serializers
 
 from users.numbering import AutoNumberMixin
 
-from users.brief import PatientBriefSerializer
+from users.brief import PatientBriefSerializer, ServiceBriefSerializer
 
 from .models import LabRequest, LabResult, LabTest
 
 
 class LabTestSerializer(serializers.ModelSerializer):
+    service_detail = ServiceBriefSerializer(source="service", read_only=True)
 
     class Meta:
         model = LabTest
@@ -17,6 +18,8 @@ class LabTestSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "price",
+            "service",
+            "service_detail",
             "normal_range",
             "is_active",
             "created_at",

@@ -1,3 +1,4 @@
+import json
 import logging
 
 from datetime import timedelta
@@ -215,6 +216,55 @@ class LogoutView(APIView):
         logger.info(
             f"User {request.user.id} logged out and refresh token blacklisted"
         )
+        return Response(status=status.HTTP_205_RESET_CONTENT)
+
+
+@extend_schema(
+    request=inline_serializer(
+        "SessionCloseRequest", {"refresh": drf_serializers.CharField()}
+    ),
+    responses={205: None, 400: DETAIL_RESPONSE},
+)
+class SessionCloseView(APIView):
+    """Détruit la session d'un onglet lorsque celui-ci est fermé.
+
+    Appelé par le front via ``navigator.sendBeacon`` (corps ``text/plain`` pour
+    éviter un préflight CORS pendant le déchargement de la page). L'endpoint
+    n'exige pas d'authentification : le refresh token est lui-même le secret
+    de la session. Il est mis en liste noire et l'utilisateur repasse hors ligne.
+    """
+
+    permission_classes = ()
+    authentication_classes = ()
+
+    def post(self, request):
+        refresh_token = None
+        try:
+            payload = json.loads(request.body.decode("utf-8") or "{}")
+            if isinstance(payload, dict):
+                refresh_token = payload.get("refresh")
+        except (ValueError, UnicodeDecodeError):
+            refresh_token = None
+
+        if not isinstance(refresh_token, str) or not refresh_token:
+            return Response(
+                {"detail": "Refresh token required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            user_id = token.get("user_id")
+        except Exception as e:
+            logger.warning("Failed to close session: %s", e)
+            return Response(
+                {"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if user_id is not None:
+            User.objects.filter(pk=user_id).update(last_seen_at=None)
+        logger.info("Session closed for user %s (tab closed)", user_id)
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
 

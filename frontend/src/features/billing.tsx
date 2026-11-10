@@ -44,7 +44,7 @@ const invoiceCfg: ResourceConfig<Invoice> = {
     },
   ],
   createLabel: 'Nouvelle facture',
-  onCreated: (i, go) => go(`/billing/invoices/${i.id}?add=1`),
+  onCreated: (i, go) => go(`/billing/invoices/${i.id}`),
   columns: [
     {
       key: 'n',
@@ -276,7 +276,42 @@ export function InvoiceDetailPage() {
   const canEdit = can(...STAFF) && inv.status !== 'CANCELLED';
 
   const itemCols: Column<InvoiceItem>[] = [
-    { key: 'd', header: 'Désignation', render: (i) => i.description },
+    {
+      key: 'd',
+      header: 'Désignation',
+      render: (i) => (
+        <div>
+          <p>{i.description}</p>
+          {i.source_reference && (
+            <p className="text-xs text-sub">
+              {i.source_reference}
+              {i.source_type === 'PHARMACY' ? ` · ${i.quantity} délivré(s)` : ''}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 's',
+      header: 'Département',
+      render: (i) => i.service_detail?.name ?? '—',
+    },
+    {
+      key: 'm',
+      header: 'Médecin',
+      render: (i) => i.doctor_detail?.name ?? i.doctor_name ?? '—',
+    },
+    {
+      key: 'o',
+      header: 'Origine',
+      render: (i) =>
+        ({
+          CONSULTATION: 'Consultation',
+          LAB: 'Examen',
+          PHARMACY: 'Pharmacie',
+          MANUAL: 'Saisie manuelle',
+        })[i.source_type],
+    },
     { key: 'q', header: 'Qté', render: (i) => i.quantity },
     { key: 'u', header: 'Prix unitaire', render: (i) => money(i.unit_price) },
     {

@@ -6,7 +6,7 @@ import { ResourcePage, ResourceConfig } from '@/components/ResourcePage';
 import { Badge, Column, DataTable, PageHeader, Pagination, StatusBadge } from '@/components/ui';
 import { FormModal } from '@/components/FormModal';
 import { CreateFromConsultation } from '@/components/CreateFromConsultation';
-import { Tabs } from './common';
+import { serviceRel, Tabs } from './common';
 import { useAction, useList, useSave } from '@/lib/queries';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
@@ -31,6 +31,7 @@ const testCfg: ResourceConfig<LabTest> = {
       hideOnMobile: true,
     },
     { key: 'r', header: 'Valeurs normales', render: (t) => t.normal_range || '—' },
+    { key: 's', header: 'Département', render: (t) => t.service_detail?.name ?? '—' },
     { key: 'p', header: 'Prix', render: (t) => money(t.price) },
     {
       key: 'a',
@@ -42,6 +43,7 @@ const testCfg: ResourceConfig<LabTest> = {
   ],
   fields: [
     { name: 'name', label: "Nom de l'examen", type: 'text', required: true },
+    { name: 'service', label: 'Département', type: 'relation', relation: serviceRel },
     { name: 'price', label: 'Prix', type: 'number', step: '0.01' },
     { name: 'normal_range', label: 'Valeurs normales', type: 'textarea' },
     { name: 'description', label: 'Description', type: 'textarea' },

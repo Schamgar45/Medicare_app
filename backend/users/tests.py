@@ -1,3 +1,5 @@
+import json
+
 from django.test import override_settings
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
@@ -97,6 +99,33 @@ class AuthAPITests(APITestCase):
         self.assertIn(response.status_code, (200, 205))
         self.user.refresh_from_db()
         self.assertIsNone(self.user.last_seen_at)
+
+    def test_session_close_blacklists_refresh_and_clears_presence(self):
+        login = self.client.post(
+            "/api/auth/login/",
+            {"email": "test@example.com", "password": "pass1234"},
+            format="json",
+        )
+        refresh = login.data["refresh"]
+        self.user.last_seen_at = timezone.now()
+        self.user.save(update_fields=["last_seen_at"])
+
+        # Le front envoie un beacon en text/plain pour éviter le préflight CORS.
+        response = self.client.post(
+            "/api/auth/session/close/",
+            data=json.dumps({"refresh": refresh}),
+            content_type="text/plain",
+        )
+
+        self.assertEqual(response.status_code, 205)
+        self.user.refresh_from_db()
+        self.assertIsNone(self.user.last_seen_at)
+
+        # Le refresh token est bien en liste noire.
+        refreshed = self.client.post(
+            "/api/auth/refresh/", {"refresh": refresh}, format="json"
+        )
+        self.assertEqual(refreshed.status_code, 401)
 
     def test_password_reset_flow(self):
         # request password reset

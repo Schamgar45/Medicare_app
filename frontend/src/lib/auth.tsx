@@ -8,14 +8,14 @@ import {
   ReactNode,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { api, tokenStore, AUTH_LOST } from './api';
+import { api, tokenStore, AUTH_LOST, watchSessionClose } from './api';
 import type { Doctor, Role, User } from './types';
 
 interface AuthState {
   user: User | null;
   doctor: Doctor | null;
   loading: boolean;
-  login: (email: string, password: string, remember?: boolean) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   can: (...roles: Role[]) => boolean;
   /** True si l'utilisateur connecté est le super-administrateur (createsuperuser). */
@@ -71,6 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [loadDoctor]);
 
+  // Fermeture de l'onglet = fin de session (côté navigateur et côté serveur).
+  useEffect(() => watchSessionClose(), []);
+
   useEffect(() => {
     const onLost = () => {
       setUser(null);
@@ -103,9 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user?.id]);
 
   const login = useCallback(
-    async (email: string, password: string, remember = true) => {
+    async (email: string, password: string) => {
       const r = await api.post('/auth/login/', { email, password });
-      tokenStore.set({ access: r.data.access, refresh: r.data.refresh }, remember);
+      tokenStore.set({ access: r.data.access, refresh: r.data.refresh });
       setUser(r.data.user);
       void loadDoctor(r.data.user);
     },

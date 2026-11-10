@@ -188,6 +188,8 @@ export interface LabTest {
   name: string;
   description: string;
   price: string;
+  service: number | null;
+  service_detail: ServiceBrief | null;
   normal_range: string;
   is_active: boolean;
 }
@@ -236,6 +238,12 @@ export interface InvoiceItem {
   quantity: number;
   unit_price: string;
   total: string;
+  source_type: 'CONSULTATION' | 'LAB' | 'PHARMACY' | 'MANUAL';
+  source_reference: string | null;
+  doctor_name: string | null;
+  doctor_detail: DoctorBrief | null;
+  service: number | null;
+  service_detail: ServiceBrief | null;
 }
 export interface Invoice {
   id: number;
@@ -245,7 +253,7 @@ export interface Invoice {
   service: number | null;
   service_detail: ServiceBrief | null;
   subtotal: string;
-  discount: string;
+  discount: string | null;
   tax: string;
   total: string;
   amount_paid: string;

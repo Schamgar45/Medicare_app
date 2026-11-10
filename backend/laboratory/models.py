@@ -2,6 +2,7 @@ from django.db import models
 from consultations.models import Consultation
 from patients.models import Patient
 from doctor.models import Doctor
+from services.models import MedicalService
 
 
 class LabTest(models.Model):
@@ -11,6 +12,14 @@ class LabTest(models.Model):
     description = models.TextField(blank=True)
 
     price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    service = models.ForeignKey(
+        MedicalService,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="lab_tests",
+    )
 
     normal_range = models.TextField(blank=True)
 

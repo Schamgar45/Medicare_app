@@ -130,7 +130,6 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
-  const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -173,7 +172,7 @@ export function LoginPage() {
             // Filet de sécurité : si le navigateur a rempli sans passer par onChange, on lit le DOM.
             const em = (email || emailRef.current?.value || '').trim();
             const pw = password || passRef.current?.value || '';
-            await login(em, pw, remember);
+            await login(em, pw);
             nav(loc.state?.from || '/', { replace: true });
           } catch (err) {
             const r = (err as any).response;
@@ -223,15 +222,7 @@ export function LoginPage() {
             </button>
           </div>
         </FieldD>
-        <div className="flex items-center justify-between gap-3 text-sm">
-          <label className="flex cursor-pointer items-center gap-2 text-white/80">
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-[#2fc58a]"
-              onChange={(e) => setRemember(e.target.checked)}
-            />
-            {t('Se souvenir de moi')}
-          </label>
+        <div className="flex items-center justify-end gap-3 text-sm">
           <Link to="/forgot" className="font-semibold text-[#3ddc97] hover:underline">
             {t('Mot de passe oublié ?')}
           </Link>

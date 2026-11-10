@@ -65,7 +65,20 @@ export function invoiceDoc(inv: Invoice): DocDef {
           <tbody>
             {inv.items.map((i) => (
               <tr key={i.id} className="border-b border-[#dfe7f1]">
-                <td className="py-[0.9mm]">{i.description}</td>
+                <td className="py-[0.9mm]">
+                  {i.description}
+                  {(i.service_detail || i.doctor_detail || i.source_reference) && (
+                    <div className="text-[0.8em] text-[#51647A]">
+                      {[
+                        i.service_detail?.name,
+                        i.doctor_detail?.name,
+                        i.source_reference,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </div>
+                  )}
+                </td>
                 <td className="text-right">{i.quantity}</td>
                 <td className="text-right">{num(i.unit_price)}</td>
                 <td className="text-right font-semibold">{num(i.total)}</td>
