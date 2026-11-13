@@ -10,11 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+
 import os
+from dotenv import load_dotenv
 from datetime import timedelta
 from pathlib import Path
-
-from django.core.exceptions import ImproperlyConfigured
 
 try:  # charge le fichier .env s'il existe (python-dotenv)
     from dotenv import load_dotenv
@@ -103,7 +103,7 @@ ROOT_URLCONF = "configs.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -254,32 +254,10 @@ CORS_ALLOWED_ORIGINS = env_list(
     "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000",
 )
 
-# SMTP is enabled when EMAIL_HOST is configured; otherwise keep local development
-# convenient by printing messages to the console.
-EMAIL_HOST = os.getenv("EMAIL_HOST", "").strip()
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
-EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "").strip()
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))
-EMAIL_BACKEND = os.getenv(
-    "EMAIL_BACKEND",
-    "django.core.mail.backends.smtp.EmailBackend"
-    if EMAIL_HOST
-    else "django.core.mail.backends.console.EmailBackend",
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+DEFAULT_FROM_EMAIL = (
+    os.getenv("DEFAULT_FROM_EMAIL", "").strip() or "onboarding@resend.dev"
 )
-DEFAULT_FROM_EMAIL = os.getenv(
-    "DEFAULT_FROM_EMAIL", ""
-).strip() or EMAIL_HOST_USER or "noreply@medicareconnect.example"
-
-if EMAIL_USE_TLS and EMAIL_USE_SSL:
-    raise ImproperlyConfigured("Use either EMAIL_USE_TLS or EMAIL_USE_SSL, not both.")
-if (
-    EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend"
-    and not EMAIL_HOST
-):
-    raise ImproperlyConfigured("EMAIL_HOST is required when SMTP email is enabled.")
 
 # URL de la page du FRONT qui reçoit ?uid=...&token=... puis appelle
 # POST /api/auth/password-reset-confirm/

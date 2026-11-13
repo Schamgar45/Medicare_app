@@ -3,7 +3,6 @@ import logging
 
 from datetime import timedelta
 
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import timezone
@@ -33,6 +32,7 @@ from .models import User
 from .permissions import IsAdminRole
 from audit.models import AuditLog
 from audit.services import log_user_action, snapshot_user
+from configs.email import send_email
 
 logger = logging.getLogger("users.auth")
 
@@ -61,12 +61,11 @@ def _send_account_created_email(user, email, username, password):
         },
     )
 
-    send_mail(
+    send_email(
         subject=subject,
         message="Votre compte MediCare Connect a été créé avec succès.",
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
-        fail_silently=False,
         html_message=html_message,
     )
 
@@ -85,7 +84,7 @@ def _send_password_reset_email(user, reset_link):
         },
     )
 
-    send_mail(
+    send_email(
         subject=subject,
         message=(
             "Vous avez reçu cet email car une demande de réinitialisation de mot de "
@@ -93,7 +92,6 @@ def _send_password_reset_email(user, reset_link):
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
-        fail_silently=False,
         html_message=html_message,
     )
 

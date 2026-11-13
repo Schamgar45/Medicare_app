@@ -1,7 +1,7 @@
-﻿from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 
+from configs.email import send_email
 from .models import Notification, NotificationPreference
 
 
@@ -73,12 +73,11 @@ def send_notification(user, title, message, notif_type=Notification.Type.SYSTEM,
 def _send_email(user, title, message, to_email):
     if not to_email:
         return
-    send_mail(
+    send_email(
         subject=f"[Medicare] {title}",
         message=message,
         from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
         recipient_list=[to_email],
-        fail_silently=True,
     )
 
 

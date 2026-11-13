@@ -16,6 +16,7 @@ drf-spectacular==0.30.0
 
 # Variables d'environnement (.env)
 python-dotenv==1.2.4
+resend==2.53.2
 
 # Pilote PostgreSQL (requis uniquement si USE_POSTGRES=true)
 psycopg[binary]==3.3.6
