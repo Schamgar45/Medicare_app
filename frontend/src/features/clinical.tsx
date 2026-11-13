@@ -105,7 +105,12 @@ const patientCfg: ResourceConfig<Patient> = {
       formStep: 'Informations médicales',
     },
     { name: 'allergies', label: 'Allergies', type: 'textarea', formStep: 'Informations médicales' },
-    { name: 'emergency_contact_name', label: "Contact d'urgence", type: 'text', formStep: 'Contact d’urgence' },
+    {
+      name: 'emergency_contact_name',
+      label: "Contact d'urgence",
+      type: 'text',
+      formStep: 'Contact d’urgence',
+    },
     {
       name: 'emergency_contact_phone',
       label: 'Téléphone du contact',
@@ -114,7 +119,12 @@ const patientCfg: ResourceConfig<Patient> = {
       hint: 'Format international, ex. +25779987654',
       formStep: 'Contact d’urgence',
     },
-    { name: 'emergency_contact_relationship', label: 'Lien avec le patient', type: 'text', formStep: 'Contact d’urgence' },
+    {
+      name: 'emergency_contact_relationship',
+      label: 'Lien avec le patient',
+      type: 'text',
+      formStep: 'Contact d’urgence',
+    },
     {
       name: 'status',
       label: 'Statut',
@@ -172,7 +182,8 @@ export function PatientDetailPage() {
         <Skeleton className="h-48" />
       </div>
     );
-  if (!p.data) return <div className="card p-10 text-center text-sub">{t('Patient introuvable.')}</div>;
+  if (!p.data)
+    return <div className="card p-10 text-center text-sub">{t('Patient introuvable.')}</div>;
   const d = p.data;
 
   const apptCols: Column<Appointment>[] = [
@@ -395,11 +406,39 @@ const doctorCfg: ResourceConfig<Doctor> = {
       },
       formStep: 'Identité et compte',
     },
-    { name: 'specialty', label: 'Spécialité', type: 'relation', relation: specialtyRel, formStep: 'Profil professionnel' },
-    { name: 'service', label: 'Département', type: 'relation', relation: serviceRel, formStep: 'Profil professionnel' },
-    { name: 'registration_number', label: "N° d'ordre", type: 'text', formStep: 'Profil professionnel' },
-    { name: 'consultation_fee', label: 'Tarif de consultation', type: 'number', step: '0.01', formStep: 'Profil professionnel' },
-    { name: 'is_available', label: 'Disponible', type: 'checkbox', formStep: 'Profil professionnel' },
+    {
+      name: 'specialty',
+      label: 'Spécialité',
+      type: 'relation',
+      relation: specialtyRel,
+      formStep: 'Profil professionnel',
+    },
+    {
+      name: 'service',
+      label: 'Département',
+      type: 'relation',
+      relation: serviceRel,
+      formStep: 'Profil professionnel',
+    },
+    {
+      name: 'registration_number',
+      label: "N° d'ordre",
+      type: 'text',
+      formStep: 'Profil professionnel',
+    },
+    {
+      name: 'consultation_fee',
+      label: 'Tarif de consultation',
+      type: 'number',
+      step: '0.01',
+      formStep: 'Profil professionnel',
+    },
+    {
+      name: 'is_available',
+      label: 'Disponible',
+      type: 'checkbox',
+      formStep: 'Profil professionnel',
+    },
   ],
 };
 export const DoctorsPage = () => {
@@ -427,10 +466,33 @@ const apptFields = (role?: string) => {
       relation: doctorRel,
       formStep: 'Patient et équipe',
     },
-    { name: 'service', label: 'Département', type: 'relation' as const, relation: serviceRel, formStep: 'Patient et équipe' },
-    { name: 'appointment_date', label: 'Date', type: 'date' as const, required: true, formStep: 'Horaire' },
-    { name: 'appointment_time', label: 'Heure', type: 'time' as const, required: true, formStep: 'Horaire' },
-    { name: 'reason', label: 'Motif', type: 'textarea' as const, formStep: 'Détails du rendez-vous' },
+    {
+      name: 'service',
+      label: 'Département',
+      type: 'relation' as const,
+      relation: serviceRel,
+      formStep: 'Patient et équipe',
+    },
+    {
+      name: 'appointment_date',
+      label: 'Date',
+      type: 'date' as const,
+      required: true,
+      formStep: 'Horaire',
+    },
+    {
+      name: 'appointment_time',
+      label: 'Heure',
+      type: 'time' as const,
+      required: true,
+      formStep: 'Horaire',
+    },
+    {
+      name: 'reason',
+      label: 'Motif',
+      type: 'textarea' as const,
+      formStep: 'Détails du rendez-vous',
+    },
     {
       name: 'status',
       label: 'Statut',
@@ -439,7 +501,12 @@ const apptFields = (role?: string) => {
       options: opts(APPT_STATUS),
       formStep: 'Détails du rendez-vous',
     },
-    { name: 'notes', label: 'Notes', type: 'textarea' as const, formStep: 'Détails du rendez-vous' },
+    {
+      name: 'notes',
+      label: 'Notes',
+      type: 'textarea' as const,
+      formStep: 'Détails du rendez-vous',
+    },
   ];
   // Un médecin ne modifie que le statut et les notes d'un rendez-vous.
   return role === 'DOCTOR' ? all.filter((f) => f.name === 'status' || f.name === 'notes') : all;
@@ -578,16 +645,55 @@ const consCfg: ResourceConfig<Consultation> = {
       },
       formStep: 'Patient et motif',
     },
-    { name: 'reason', label: 'Motif de consultation', type: 'textarea', formStep: 'Patient et motif' },
+    {
+      name: 'reason',
+      label: 'Motif de consultation',
+      type: 'textarea',
+      formStep: 'Patient et motif',
+    },
     { name: 'symptoms', label: 'Symptômes', type: 'textarea', formStep: 'Évaluation clinique' },
-    { name: 'temperature', label: 'Température (°C)', type: 'number', step: '0.1', formStep: 'Évaluation clinique' },
-    { name: 'weight', label: 'Poids (kg)', type: 'number', step: '0.1', formStep: 'Évaluation clinique' },
-    { name: 'height', label: 'Taille (cm)', type: 'number', step: '0.1', formStep: 'Évaluation clinique' },
-    { name: 'blood_pressure', label: 'Tension artérielle', type: 'text', placeholder: '120/80', formStep: 'Évaluation clinique' },
+    {
+      name: 'temperature',
+      label: 'Température (°C)',
+      type: 'number',
+      step: '0.1',
+      formStep: 'Évaluation clinique',
+    },
+    {
+      name: 'weight',
+      label: 'Poids (kg)',
+      type: 'number',
+      step: '0.1',
+      formStep: 'Évaluation clinique',
+    },
+    {
+      name: 'height',
+      label: 'Taille (cm)',
+      type: 'number',
+      step: '0.1',
+      formStep: 'Évaluation clinique',
+    },
+    {
+      name: 'blood_pressure',
+      label: 'Tension artérielle',
+      type: 'text',
+      placeholder: '120/80',
+      formStep: 'Évaluation clinique',
+    },
     { name: 'heart_rate', label: 'Pouls (bpm)', type: 'number', formStep: 'Évaluation clinique' },
     { name: 'diagnosis', label: 'Diagnostic', type: 'textarea', formStep: 'Diagnostic et soins' },
-    { name: 'observations', label: 'Observations', type: 'textarea', formStep: 'Diagnostic et soins' },
-    { name: 'treatment_plan', label: 'Plan de traitement', type: 'textarea', formStep: 'Diagnostic et soins' },
+    {
+      name: 'observations',
+      label: 'Observations',
+      type: 'textarea',
+      formStep: 'Diagnostic et soins',
+    },
+    {
+      name: 'treatment_plan',
+      label: 'Plan de traitement',
+      type: 'textarea',
+      formStep: 'Diagnostic et soins',
+    },
     {
       name: 'status',
       label: 'Statut',

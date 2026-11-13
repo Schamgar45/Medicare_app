@@ -12,9 +12,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 
 import os
-from dotenv import load_dotenv
+import sys
 from datetime import timedelta
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 try:  # charge le fichier .env s'il existe (python-dotenv)
     from dotenv import load_dotenv
@@ -38,6 +39,11 @@ def env_list(name, default=""):
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool("DJANGO_DEBUG", True)
+# Les tests Django ne doivent jamais hériter de la configuration de production
+# présente dans le .env local, ni envoyer des courriels réels.
+TESTING = "test" in sys.argv
+if TESTING:
+    DEBUG = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Elle signe aussi les JWT : en production elle doit venir de l'environnement.
@@ -49,6 +55,28 @@ if not SECRET_KEY:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DEBUG is off.")
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,::1")
+
+# Les valeurs sûres sont activées automatiquement hors développement et restent
+# configurables pour les déploiements derrière un reverse proxy TLS.
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", not DEBUG)
+SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", not DEBUG)
+SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_SECURE_HSTS_SECONDS", "0" if DEBUG else "31536000"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
+SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", False)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") if env_bool(
+    "DJANGO_BEHIND_HTTPS_PROXY", False
+) else None
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+
+if not DEBUG:
+    if not os.getenv("DJANGO_ALLOWED_HOSTS", "").strip():
+        raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must list the production hostnames.")
+    if not env_bool("USE_POSTGRES", False):
+        raise ImproperlyConfigured("USE_POSTGRES=true is required when DJANGO_DEBUG=false.")
+    if len(SECRET_KEY) < 50 or len(set(SECRET_KEY)) < 5:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY must be a long, random production secret.")
 
 
 # Application definition
@@ -122,6 +150,12 @@ WSGI_APPLICATION = "configs.wsgi.application"
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 if env_bool("USE_POSTGRES", False):
+    required_db_settings = ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST")
+    missing_db_settings = [name for name in required_db_settings if not os.getenv(name)]
+    if missing_db_settings:
+        raise ImproperlyConfigured(
+            "Missing PostgreSQL settings: " + ", ".join(missing_db_settings)
+        )
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -215,6 +249,11 @@ SPECTACULAR_SETTINGS = {
         "name": "MIT",
     },
     "SERVERS": [],
+    "SERVE_PERMISSIONS": [
+        "rest_framework.permissions.AllowAny"
+        if DEBUG
+        else "users.permissions.IsAdminRole"
+    ],
     "COMPONENT_SPLIT_REQUEST": True,
     # Noms stables pour les énumérations (types TypeScript lisibles côté front).
     "ENUM_NAME_OVERRIDES": {
@@ -255,6 +294,13 @@ CORS_ALLOWED_ORIGINS = env_list(
 )
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND") or (
+    "django.core.mail.backends.locmem.EmailBackend"
+    if TESTING
+    else "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend"
+)
 DEFAULT_FROM_EMAIL = (
     os.getenv("DEFAULT_FROM_EMAIL", "").strip() or "onboarding@resend.dev"
 )
@@ -264,3 +310,13 @@ DEFAULT_FROM_EMAIL = (
 PASSWORD_RESET_URL = os.getenv(
     "PASSWORD_RESET_URL", "http://localhost:5173/reset-password"
 )
+
+if not DEBUG:
+    if not CORS_ALLOWED_ORIGINS:
+        raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS must contain the production frontend origin.")
+    if not RESEND_API_KEY:
+        raise ImproperlyConfigured("RESEND_API_KEY is required to send account and reset emails.")
+    if not os.getenv("DEFAULT_FROM_EMAIL", "").strip():
+        raise ImproperlyConfigured("DEFAULT_FROM_EMAIL must be a verified sender in production.")
+    if not PASSWORD_RESET_URL.startswith("https://"):
+        raise ImproperlyConfigured("PASSWORD_RESET_URL must use HTTPS in production.")

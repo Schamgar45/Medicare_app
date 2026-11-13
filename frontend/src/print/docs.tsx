@@ -69,11 +69,7 @@ export function invoiceDoc(inv: Invoice): DocDef {
                   {i.description}
                   {(i.service_detail || i.doctor_detail || i.source_reference) && (
                     <div className="text-[0.8em] text-[#51647A]">
-                      {[
-                        i.service_detail?.name,
-                        i.doctor_detail?.name,
-                        i.source_reference,
-                      ]
+                      {[i.service_detail?.name, i.doctor_detail?.name, i.source_reference]
                         .filter(Boolean)
                         .join(' · ')}
                     </div>

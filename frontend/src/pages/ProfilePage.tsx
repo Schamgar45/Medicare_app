@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -95,7 +95,8 @@ function StrengthMeter({ value }: { value: string }) {
         ))}
       </div>
       <span className="text-xs text-mute">
-        {t('Robustesse')} : <span className="font-semibold text-sub">{t(STRENGTH_LABELS[score])}</span>
+        {t('Robustesse')} :{' '}
+        <span className="font-semibold text-sub">{t(STRENGTH_LABELS[score])}</span>
       </span>
     </div>
   );
@@ -130,11 +131,17 @@ export function ProfilePage() {
   const [pwMsg, setPwMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Disponibilité du changement de mot de passe (limite 1×/semaine côté serveur).
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
+  const passwordChangedAt = user?.password_changed_at;
   const pwReady = useMemo(() => {
-    if (!user?.password_changed_at) return { allowed: true, nextDate: null as Date | null };
-    const next = new Date(user.password_changed_at).getTime() + COOLDOWN_MS;
-    return { allowed: Date.now() >= next, nextDate: new Date(next) };
-  }, [user?.password_changed_at]);
+    if (!passwordChangedAt) return { allowed: true, nextDate: null as Date | null };
+    const next = new Date(passwordChangedAt).getTime() + COOLDOWN_MS;
+    return { allowed: now >= next, nextDate: new Date(next) };
+  }, [passwordChangedAt, now]);
 
   const emailChanged = form.email.trim().toLowerCase() !== (user?.email ?? '').toLowerCase();
 
@@ -267,7 +274,9 @@ export function ProfilePage() {
               {user.is_superuser && <Badge tone="bad">{t('Super-admin')}</Badge>}
               <Badge tone={user.status === 'ACTIVE' ? 'ok' : 'mute'}>{label(user.status)}</Badge>
             </div>
-            <p className="mt-2 text-xs text-mute">{t('Membre depuis le')} {fmtDate(user.created_at)}</p>
+            <p className="mt-2 text-xs text-mute">
+              {t('Membre depuis le')} {fmtDate(user.created_at)}
+            </p>
           </div>
 
           <div className="flex gap-2 mt-4 sm:mt-0 sm:ml-auto">
@@ -292,7 +301,9 @@ export function ProfilePage() {
             )}
           </div>
           {preview && (
-            <p className="text-xs text-mute mt-4 sm:mt-0">{t('Aperçu — enregistrez pour appliquer.')}</p>
+            <p className="text-xs text-mute mt-4 sm:mt-0">
+              {t('Aperçu — enregistrez pour appliquer.')}
+            </p>
           )}
         </div>
       </div>
@@ -319,24 +330,24 @@ export function ProfilePage() {
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
               />
             </Field>
-            <Field label={t("Rôle")} hint={t("Modifiable uniquement par un administrateur.")}>
+            <Field label={t('Rôle')} hint={t('Modifiable uniquement par un administrateur.')}>
               <input className="input bg-sunken" value={label(user.role)} disabled />
             </Field>
-            <Field label={t("Prénom")}>
+            <Field label={t('Prénom')}>
               <input
                 className="input"
                 value={form.first_name}
                 onChange={(e) => setForm({ ...form, first_name: e.target.value })}
               />
             </Field>
-            <Field label={t("Nom")}>
+            <Field label={t('Nom')}>
               <input
                 className="input"
                 value={form.last_name}
                 onChange={(e) => setForm({ ...form, last_name: e.target.value })}
               />
             </Field>
-            <Field label={t("E-mail")} required error={infoErrors.email}>
+            <Field label={t('E-mail')} required error={infoErrors.email}>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" />
                 <input
@@ -348,9 +359,9 @@ export function ProfilePage() {
               </div>
             </Field>
             <Field
-              label={t("Téléphone")}
+              label={t('Téléphone')}
               error={infoErrors.phone}
-              hint={t("Format international, ex. +25779987654.")}
+              hint={t('Format international, ex. +25779987654.')}
             >
               <div className="relative">
                 <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mute" />
@@ -361,7 +372,7 @@ export function ProfilePage() {
                 />
               </div>
             </Field>
-            <Field label={t("Genre")} required>
+            <Field label={t('Genre')} required>
               <select
                 className="input"
                 value={form.gender}
@@ -376,7 +387,7 @@ export function ProfilePage() {
             </Field>
             {emailChanged && (
               <Field
-                label={t("Mot de passe actuel")}
+                label={t('Mot de passe actuel')}
                 required
                 error={infoErrors.current_password}
                 hint="Exigé pour confirmer le changement d'e-mail."
@@ -437,13 +448,15 @@ export function ProfilePage() {
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
               {pwReady.allowed
-                ? t("Choisissez un mot de passe sûr d'au moins 8 caractères. Vous pourrez le modifier à nouveau au plus tôt dans 7 jours.")
+                ? t(
+                    "Choisissez un mot de passe sûr d'au moins 8 caractères. Vous pourrez le modifier à nouveau au plus tôt dans 7 jours.",
+                  )
                 : `${t('Pour des raisons de sécurité, un seul changement de mot de passe est autorisé par semaine. Nouveau changement possible à partir du')} ${fmtDate(pwReady.nextDate?.toISOString())}.`}
             </p>
           </div>
 
           <div className="space-y-4">
-            <Field label={t("Mot de passe actuel")} required>
+            <Field label={t('Mot de passe actuel')} required>
               <PasswordInput
                 value={pw.old_password}
                 onChange={(v) => setPw({ ...pw, old_password: v })}
@@ -451,7 +464,7 @@ export function ProfilePage() {
                 disabled={!pwReady.allowed}
               />
             </Field>
-            <Field label={t("Nouveau mot de passe")} required error={pwErrors.new_password}>
+            <Field label={t('Nouveau mot de passe')} required error={pwErrors.new_password}>
               <PasswordInput
                 value={pw.new_password}
                 onChange={(v) => setPw({ ...pw, new_password: v })}
@@ -461,7 +474,7 @@ export function ProfilePage() {
             </Field>
             <StrengthMeter value={pw.new_password} />
             <Field
-              label={t("Confirmer le nouveau mot de passe")}
+              label={t('Confirmer le nouveau mot de passe')}
               required
               error={pwErrors.confirm_password}
             >
@@ -501,7 +514,9 @@ export function ProfilePage() {
       <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
         <div>
           <p className="font-semibold">{t('Session')}</p>
-          <p className="text-sm text-sub">{t('Déconnectez-vous de cet appareil en toute sécurité.')}</p>
+          <p className="text-sm text-sub">
+            {t('Déconnectez-vous de cet appareil en toute sécurité.')}
+          </p>
         </div>
         <button
           className="btn btn-ghost"

@@ -183,7 +183,11 @@ export function Sheet({
         </div>
         <div className="text-right" style={{ fontSize: small ? '2.8mm' : '3.3mm' }}>
           {number && <div className="font-bold">N° {number}</div>}
-          {date && <div className="text-[#51647A]">{t('Date')} : {date}</div>}
+          {date && (
+            <div className="text-[#51647A]">
+              {t('Date')} : {date}
+            </div>
+          )}
         </div>
       </div>
       {/* Corps */}

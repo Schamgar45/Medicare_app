@@ -2,9 +2,10 @@ import django_filters
 from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
 from django.db import transaction
-from django.db.models import F, Sum
+from django.db.models import F, Q, Sum
 from django.db.models.deletion import RestrictedError
 from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 from users.roles import CASHIER, DOCTOR, PHARMACIST, RECEPTIONIST
 
@@ -31,11 +32,6 @@ class MedicationFilter(django_filters.FilterSet):
 
 class MedicationViewSet(viewsets.ModelViewSet):
 
-    # current_stock = somme des quantités de tous les lots du médicament
-    queryset = Medication.objects.annotate(
-        current_stock=Coalesce(Sum("batches__quantity"), 0)
-    )
-
     serializer_class = MedicationSerializer
 
     read_roles = [DOCTOR, PHARMACIST, RECEPTIONIST, CASHIER]
@@ -45,6 +41,19 @@ class MedicationViewSet(viewsets.ModelViewSet):
     search_fields = ["name", "generic_name", "manufacturer"]
     ordering_fields = ["id", "name", "unit_price", "current_stock"]
     ordering = ["name"]
+
+    def get_queryset(self):
+        # Calculé par requête afin que la date d'expiration reste juste après minuit.
+        return Medication.objects.annotate(
+            current_stock=Coalesce(
+                Sum(
+                    "batches__quantity",
+                    filter=Q(batches__expiration_date__isnull=True)
+                    | Q(batches__expiration_date__gte=timezone.localdate()),
+                ),
+                0,
+            )
+        )
 
     @transaction.atomic
     def destroy(self, request, *args, **kwargs):

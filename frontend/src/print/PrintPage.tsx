@@ -127,7 +127,9 @@ export default function PrintPage() {
 
       <div className="flex justify-center p-4 print:p-0">
         {loading && <Skeleton className="h-[500px] w-full max-w-3xl" />}
-        {error && !loading && <p className="card p-10 text-sm text-sub">{t('Document introuvable.')}</p>}
+        {error && !loading && (
+          <p className="card p-10 text-sm text-sub">{t('Document introuvable.')}</p>
+        )}
         {doc && (
           <div
             className="print-area origin-top shadow-card print:shadow-none"

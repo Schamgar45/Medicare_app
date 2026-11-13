@@ -73,14 +73,22 @@ npm run build                    # tsc -b && vite build
 - Les types du front sont écrits à la main dans `frontend/src/lib/types.ts` ; ils sont à maintenir
   alignés sur `backend/schema.yaml`.
 
-## Sécurité — points connus
+## Déploiement — contrôles et limites métier
 
-Ces éléments sont fonctionnels mais à traiter avant une mise en production :
+En production, `DEBUG=false` active HTTPS, les cookies sécurisés et HSTS. L'API refuse de
+démarrer sans clé secrète forte, hôtes autorisés, PostgreSQL, origine CORS, Resend et URL
+HTTPS de réinitialisation correctement configurés. La documentation OpenAPI est réservée
+aux comptes staff hors développement.
 
-1. `/api/docs/` et `/api/schema/` sont **publics** (à restreindre).
-2. Le modèle `AuditLog` existe mais **aucun code n'y écrit** encore.
-3. `current_stock` additionne tous les lots, y compris périmés.
-4. `npm audit` : **0 vulnérabilité** (après migration `vite` 5→8, `tailwindcss` 3→4,
-   `react-router-dom` 6→7). Les détails de ces migrations sont dans `frontend/README.md`.
-5. Les factures et mouvements de stock ne sont pas générés automatiquement depuis une
+Avant d'ouvrir le service au public, configure le reverse proxy pour transmettre
+`X-Forwarded-Proto: https` si TLS s'arrête au proxy, fais les sauvegardes PostgreSQL et
+vérifie les domaines, CORS et l'expéditeur Resend du vrai environnement.
+
+Points métier à valider avec l'équipe du centre avant utilisation réelle :
+
+1. `current_stock` ignore maintenant les lots expirés, mais le parcours complet de
+   délivrance et de correction des stocks doit être vérifié avec les règles de la pharmacie.
+2. Les factures et mouvements de stock ne sont pas générés automatiquement depuis une
    consultation ou une ordonnance.
+3. `npm audit` : **0 vulnérabilité** (après migration `vite` 5→8, `tailwindcss` 3→4,
+   `react-router-dom` 6→7). Les détails de ces migrations sont dans `frontend/README.md`.

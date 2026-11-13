@@ -105,7 +105,8 @@ export function PrescriptionDetailPage() {
 
   if (q.isLoading) return <Skeleton className="h-64" />;
   const rx = q.data;
-  if (!rx) return <div className="card p-10 text-center text-sub">{t('Ordonnance introuvable.')}</div>;
+  if (!rx)
+    return <div className="card p-10 text-center text-sub">{t('Ordonnance introuvable.')}</div>;
   const editable = can('DOCTOR') && ['DRAFT', 'VALIDATED'].includes(rx.status);
 
   const change = async (status: string) => {
@@ -222,16 +223,11 @@ export function PrescriptionDetailPage() {
               <>
                 <button
                   className="btn btn-accent btn-sm"
-                  onClick={() =>
-                    dispense('DISPENSED').catch((e) => toast.err(apiError(e).message))
-                  }
+                  onClick={() => dispense('DISPENSED').catch((e) => toast.err(apiError(e).message))}
                 >
                   Marquer comme délivrée
                 </button>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => setDispensingPartial(true)}
-                >
+                <button className="btn btn-ghost btn-sm" onClick={() => setDispensingPartial(true)}>
                   Partiellement délivrée
                 </button>
               </>
@@ -252,7 +248,9 @@ export function PrescriptionDetailPage() {
             columns={cols}
             rows={rx.items}
             empty={
-              <p className="p-6 text-center text-sm text-mute">{t("Aucun médicament pour l'instant.")}</p>
+              <p className="p-6 text-center text-sm text-mute">
+                {t("Aucun médicament pour l'instant.")}
+              </p>
             }
           />
         </section>

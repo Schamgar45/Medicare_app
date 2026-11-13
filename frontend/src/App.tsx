@@ -54,7 +54,9 @@ function Guard({ path, children }: { path: string; children: ReactNode }) {
     return (
       <div className="card mx-auto mt-10 max-w-md p-10 text-center">
         <p className="font-bold">{t('Accès non autorisé')}</p>
-        <p className="mt-1 text-sm text-sub">{t("Votre rôle ne permet pas d'ouvrir cette page.")}</p>
+        <p className="mt-1 text-sm text-sub">
+          {t("Votre rôle ne permet pas d'ouvrir cette page.")}
+        </p>
       </div>
     );
   return <>{children}</>;

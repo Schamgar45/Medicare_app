@@ -132,7 +132,18 @@ const EN_UNITS = [
   'eighteen',
   'nineteen',
 ];
-const EN_TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+const EN_TENS = [
+  '',
+  '',
+  'twenty',
+  'thirty',
+  'forty',
+  'fifty',
+  'sixty',
+  'seventy',
+  'eighty',
+  'ninety',
+];
 const EN_SCALES = ['', 'thousand', 'million', 'billion', 'trillion', 'quadrillion'];
 
 function englishBelow1000(n: number): string {
@@ -158,9 +169,7 @@ function englishInWords(value: number): string {
     const group = remainder % 1000;
     if (group) {
       if (scale >= EN_SCALES.length) return new Intl.NumberFormat('en-US').format(value);
-      parts.unshift(
-        [englishBelow1000(group), EN_SCALES[scale]].filter(Boolean).join(' '),
-      );
+      parts.unshift([englishBelow1000(group), EN_SCALES[scale]].filter(Boolean).join(' '));
     }
     remainder = Math.floor(remainder / 1000);
     scale += 1;

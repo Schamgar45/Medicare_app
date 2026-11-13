@@ -121,8 +121,7 @@ export function FormModal({
   const { language } = useLanguage();
   const toast = useToast();
   const visible = useMemo(
-    () =>
-      fields.filter((f) => (editing ? !f.createOnly : !f.editOnly)),
+    () => fields.filter((f) => (editing ? !f.createOnly : !f.editOnly)),
     [fields, editing],
   );
   const formSteps = useMemo(() => {
@@ -243,7 +242,11 @@ export function FormModal({
             {useWizard ? (
               <>
                 {activeStep > 0 && (
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setActiveStep((step) => step - 1)}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setActiveStep((step) => step - 1)}
+                  >
                     {t('Retour')}
                   </button>
                 )}
@@ -260,7 +263,9 @@ export function FormModal({
             )}
           </div>
           {useWizard && activeStep === 0 && (
-            <button type="button" className="btn btn-ghost" onClick={onClose}>{t('Annuler')}</button>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
+              {t('Annuler')}
+            </button>
           )}
           {useWizard && activeStep < formSteps.length - 1 ? (
             <button type="button" className="btn btn-primary" onClick={() => void advanceStep()}>
@@ -280,16 +285,50 @@ export function FormModal({
         </>
       }
     >
-      <form id="resource-form" onSubmit={handleFormSubmit} className="grid gap-4 sm:grid-cols-2" noValidate>
+      <form
+        id="resource-form"
+        onSubmit={handleFormSubmit}
+        className="grid gap-4 sm:grid-cols-2"
+        noValidate
+      >
         {useWizard && (
           <div className="col-span-full mb-2" aria-label={t('Progression du formulaire')}>
-            <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-sunken" role="progressbar" aria-valuemin={1} aria-valuemax={formSteps.length} aria-valuenow={activeStep + 1}>
-              <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${((activeStep + 1) / formSteps.length) * 100}%` }} />
+            <div
+              className="mb-4 h-1.5 overflow-hidden rounded-full bg-sunken"
+              role="progressbar"
+              aria-valuemin={1}
+              aria-valuemax={formSteps.length}
+              aria-valuenow={activeStep + 1}
+            >
+              <div
+                className="h-full rounded-full bg-brand transition-all"
+                style={{ width: `${((activeStep + 1) / formSteps.length) * 100}%` }}
+              />
             </div>
-            <ol className="grid gap-2" style={{ gridTemplateColumns: `repeat(${formSteps.length}, minmax(0, 1fr))` }}>
+            <ol
+              className="grid gap-2"
+              style={{ gridTemplateColumns: `repeat(${formSteps.length}, minmax(0, 1fr))` }}
+            >
               {formSteps.map((step, index) => (
-                <li key={step.title} className={clsx('min-w-0 text-center text-[10px] font-semibold sm:text-xs', index === activeStep ? 'text-brand' : index < activeStep ? 'text-ink' : 'text-mute')}>
-                  <span className={clsx('mx-auto mb-1 grid h-6 w-6 place-items-center rounded-full text-xs', index <= activeStep ? 'bg-brand text-brand-ink' : 'bg-sunken text-sub')}>{index + 1}</span>
+                <li
+                  key={step.title}
+                  className={clsx(
+                    'min-w-0 text-center text-[10px] font-semibold sm:text-xs',
+                    index === activeStep
+                      ? 'text-brand'
+                      : index < activeStep
+                        ? 'text-ink'
+                        : 'text-mute',
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      'mx-auto mb-1 grid h-6 w-6 place-items-center rounded-full text-xs',
+                      index <= activeStep ? 'bg-brand text-brand-ink' : 'bg-sunken text-sub',
+                    )}
+                  >
+                    {index + 1}
+                  </span>
                   <span className="block truncate">{step.title}</span>
                 </li>
               ))}
@@ -321,9 +360,7 @@ export function FormModal({
                   {/* Pas de placeholder vide sur un select obligatoire : la
                         première option réelle est déjà présélectionnée. */}
                   {!f.required && (
-                    <option value="">
-                      {f.emptyLabel ? t(f.emptyLabel) : 'Non spécifié'}
-                    </option>
+                    <option value="">{f.emptyLabel ? t(f.emptyLabel) : 'Non spécifié'}</option>
                   )}
                   {f.options?.map((o) => (
                     <option key={o.value} value={o.value}>

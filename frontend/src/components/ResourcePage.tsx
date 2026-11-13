@@ -79,13 +79,18 @@ export function ResourcePage<T extends { id: number }>({
     setPage(1);
   }, [sp, cfg.embedded]);
 
-  const list = useList<T>(cfg.path, {
-    page,
-    search,
-    ordering: cfg.ordering,
-    ...filters,
-    ...cfg.fixedParams,
-  }, true, cfg.refetchInterval);
+  const list = useList<T>(
+    cfg.path,
+    {
+      page,
+      search,
+      ordering: cfg.ordering,
+      ...filters,
+      ...cfg.fixedParams,
+    },
+    true,
+    cfg.refetchInterval,
+  );
   const save = useSave(cfg.path, cfg.createPath);
   const remove = useRemove(cfg.path);
 
@@ -193,7 +198,11 @@ export function ResourcePage<T extends { id: number }>({
         return cfg.embedded ? (
           <div className="mb-3 flex flex-wrap justify-end gap-2">{actions}</div>
         ) : (
-          <PageHeader title={t(cfg.title)} subtitle={cfg.subtitle ? t(cfg.subtitle) : undefined} actions={actions} />
+          <PageHeader
+            title={t(cfg.title)}
+            subtitle={cfg.subtitle ? t(cfg.subtitle) : undefined}
+            actions={actions}
+          />
         );
       })()}
       <div className="card overflow-hidden">

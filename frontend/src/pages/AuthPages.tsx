@@ -49,7 +49,9 @@ function Shell({
             <span className="text-[#3ddc97]">{t('notre priorité')}</span>
           </h2>
           <p className="mt-5 text-lg text-white/75">
-            {t('Un accès sécurisé à votre espace de travail pour une meilleure gestion de nos services hospitaliers.')}
+            {t(
+              'Un accès sécurisé à votre espace de travail pour une meilleure gestion de nos services hospitaliers.',
+            )}
           </p>
           <div className="mt-10 grid grid-cols-3 gap-5">
             {[
@@ -89,7 +91,9 @@ function Shell({
             {language.toUpperCase()}
           </button>
           <p className="text-sm text-white/70">{t(subtitle)}</p>
-          <h1 className="mb-6 mt-1 text-3xl font-extrabold tracking-tight text-white">{t(title)}</h1>
+          <h1 className="mb-6 mt-1 text-3xl font-extrabold tracking-tight text-white">
+            {t(title)}
+          </h1>
           {children}
           <p className="mt-8 text-center text-xs text-white/40">
             {CENTER.name} · {t('Version')} {APP_VERSION}
@@ -151,16 +155,12 @@ export function LoginPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const clearOnFocus = (ref: React.RefObject<HTMLInputElement | null>, val: string) => () => {
-    if (!val)
-      requestAnimationFrame(() => {
-        if (ref.current) ref.current.value = '';
-      });
-  };
   if (user) return <Navigate to={loc.state?.from || '/'} replace />;
   return (
     <Shell title="Medicare Hospital" subtitle="Bienvenue sur">
-      <p className="-mt-4 mb-6 text-sm text-white/70">{t('Connectez-vous à votre espace de travail')}</p>
+      <p className="-mt-4 mb-6 text-sm text-white/70">
+        {t('Connectez-vous à votre espace de travail')}
+      </p>
       <form
         className="space-y-5"
         autoComplete="off"
@@ -195,7 +195,12 @@ export function LoginPage() {
             autoComplete="off"
             required
             value={email}
-            onFocus={clearOnFocus(emailRef, email)}
+            onFocus={() => {
+              if (!email)
+                requestAnimationFrame(() => {
+                  if (emailRef.current) emailRef.current.value = '';
+                });
+            }}
             onChange={(e) => setEmail(e.target.value)}
           />
         </FieldD>
@@ -209,7 +214,12 @@ export function LoginPage() {
               autoComplete="new-password"
               required
               value={password}
-              onFocus={clearOnFocus(passRef, password)}
+              onFocus={() => {
+                if (!password)
+                  requestAnimationFrame(() => {
+                    if (passRef.current) passRef.current.value = '';
+                  });
+              }}
               onChange={(e) => setPassword(e.target.value)}
             />
             <button
@@ -236,7 +246,8 @@ export function LoginPage() {
           </p>
         )}
         <button className={primaryBtn} disabled={busy}>
-          {busy ? <Spinner /> : <LogIn className="h-5 w-5" />}{t('Se connecter')}
+          {busy ? <Spinner /> : <LogIn className="h-5 w-5" />}
+          {t('Se connecter')}
         </button>
       </form>
     </Shell>
@@ -279,7 +290,8 @@ export function ForgotPage() {
             />
           </FieldD>
           <button className={primaryBtn} disabled={busy}>
-            {busy && <Spinner />}{t('Envoyer le lien')}
+            {busy && <Spinner />}
+            {t('Envoyer le lien')}
           </button>
         </form>
       )}
@@ -344,7 +356,8 @@ export function ResetPage() {
             </p>
           )}
           <button className={primaryBtn} disabled={busy}>
-            {busy && <Spinner />}{t('Enregistrer')}
+            {busy && <Spinner />}
+            {t('Enregistrer')}
           </button>
         </form>
       )}

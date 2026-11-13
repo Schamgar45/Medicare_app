@@ -248,7 +248,8 @@ export function Confirm({
             {t('Annuler')}
           </button>
           <button className="btn btn-danger" onClick={onConfirm} disabled={busy}>
-            {busy && <Spinner />}{t('Confirmer')}
+            {busy && <Spinner />}
+            {t('Confirmer')}
           </button>
         </>
       }
@@ -273,7 +274,9 @@ export function Pagination({
   if (count <= size) return null;
   return (
     <div className="flex items-center justify-between gap-3 border-t px-4 py-3 text-sm text-sub">
-      <span>{count} {t('résultats')}</span>
+      <span>
+        {count} {t('résultats')}
+      </span>
       <div className="flex items-center gap-2">
         <button
           className="btn btn-ghost btn-sm"

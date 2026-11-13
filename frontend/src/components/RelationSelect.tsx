@@ -55,7 +55,11 @@ export function RelationSelect({
         aria-expanded={open}
       >
         <span className={value ? 'truncate' : 'truncate text-mute'}>
-          {value ? (current.data ? relation.label(current.data) : t('Chargement…')) : t(placeholder)}
+          {value
+            ? current.data
+              ? relation.label(current.data)
+              : t('Chargement…')
+            : t(placeholder)}
         </span>
         <span className="flex items-center gap-1">
           {value && !disabled ? (

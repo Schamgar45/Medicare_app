@@ -272,7 +272,8 @@ export function InvoiceDetailPage() {
 
   if (q.isLoading) return <Skeleton className="h-64" />;
   const inv = q.data;
-  if (!inv) return <div className="card p-10 text-center text-sub">{t('Facture introuvable.')}</div>;
+  if (!inv)
+    return <div className="card p-10 text-center text-sub">{t('Facture introuvable.')}</div>;
   const canEdit = can(...STAFF) && inv.status !== 'CANCELLED';
 
   const itemCols: Column<InvoiceItem>[] = [
@@ -326,7 +327,11 @@ export function InvoiceDetailPage() {
             header: '',
             className: 'w-10',
             render: (i: InvoiceItem) => (
-              <button className="p-1.5 text-bad" aria-label={t('Retirer')} onClick={() => setDel(i)}>
+              <button
+                className="p-1.5 text-bad"
+                aria-label={t('Retirer')}
+                onClick={() => setDel(i)}
+              >
                 <Trash2 className="h-4 w-4" />
               </button>
             ),
@@ -523,7 +528,9 @@ export function InvoiceDetailPage() {
             columns={payCols}
             rows={payList ?? []}
             loading={payList === null}
-            empty={<p className="p-6 text-center text-sm text-mute">{t('Aucun paiement enregistré.')}</p>}
+            empty={
+              <p className="p-6 text-center text-sm text-mute">{t('Aucun paiement enregistré.')}</p>
+            }
           />
         </section>
       </div>
@@ -554,7 +561,8 @@ export function InvoiceDetailPage() {
             full: true,
             relation: {
               path: 'medications',
-              label: (m: Medication) => `${m.name}${m.dosage ? ' · ' + m.dosage : ''} · ${money(m.unit_price)}`,
+              label: (m: Medication) =>
+                `${m.name}${m.dosage ? ' · ' + m.dosage : ''} · ${money(m.unit_price)}`,
               params: { is_active: true },
             },
             hint: 'Choisir un médicament remplit la désignation et le prix.',

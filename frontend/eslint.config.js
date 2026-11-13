@@ -20,6 +20,10 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // Les formulaires, l'URL et l'horloge serveur ont des effets de synchronisation
+      // déclenchés par des transitions externes; cette règle les traite à tort comme
+      // des mises à jour dérivées du rendu.
+      'react-hooks/set-state-in-effect': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       // Aligne sur tsconfig.json : noUnusedLocals / noUnusedParameters y sont a false.
       '@typescript-eslint/no-unused-vars': 'off',

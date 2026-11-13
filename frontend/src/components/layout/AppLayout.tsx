@@ -28,11 +28,7 @@ function Brand() {
   useLanguage();
   return (
     <div className="flex items-center gap-3">
-      <img
-        src="/brand/logo.png"
-        alt=""
-        className="h-11 w-11 shrink-0 object-contain"
-      />
+      <img src="/brand/logo.png" alt="" className="h-11 w-11 shrink-0 object-contain" />
       <div className="leading-tight">
         <p className="text-[15px] font-bold tracking-tight text-ink sm:text-[17px]">
           {CENTER.name}
@@ -70,7 +66,15 @@ type Counts = {
 };
 const GROUPS: NavGroup[] = ['Navigation', 'Soins médicaux', 'Pharmacie & caisse', 'Administration'];
 
-function SideNav({ items, counts, collapsed = false }: { items: NavItem[]; counts: Counts; collapsed?: boolean }) {
+function SideNav({
+  items,
+  counts,
+  collapsed = false,
+}: {
+  items: NavItem[];
+  counts: Counts;
+  collapsed?: boolean;
+}) {
   const groups = GROUPS.map((g) => ({ g, list: items.filter((i) => i.group === g) })).filter(
     (x) => x.list.length,
   );
@@ -116,7 +120,10 @@ function SideNav({ items, counts, collapsed = false }: { items: NavItem[]; count
                       <>
                         <span className="flex-1">{t(l)}</span>
                         {isActive ? (
-                          <span className="h-1 w-1 shrink-0 rounded-full bg-[#08785f]" aria-hidden="true" />
+                          <span
+                            className="h-1 w-1 shrink-0 rounded-full bg-[#08785f]"
+                            aria-hidden="true"
+                          />
                         ) : (
                           c !== undefined && c > 0 && <span className={COUNT_CLASS}>{c}</span>
                         )}
@@ -124,7 +131,10 @@ function SideNav({ items, counts, collapsed = false }: { items: NavItem[]; count
                     )}
                     {collapsed && <span className="sr-only">{t(l)}</span>}
                     {collapsed && isActive && (
-                      <span className="absolute right-0.5 h-1 w-1 rounded-full bg-[#08785f]" aria-hidden="true" />
+                      <span
+                        className="absolute right-0.5 h-1 w-1 rounded-full bg-[#08785f]"
+                        aria-hidden="true"
+                      />
                     )}
                   </>
                 )}
@@ -410,7 +420,9 @@ function GlobalSearch({ role }: { role?: string }) {
         <div className="card absolute left-0 right-0 top-full z-50 mt-2 max-h-[min(70vh,520px)] overflow-y-auto p-2 shadow-xl">
           {result.isFetching && <p className="p-3 text-sm text-mute">{t('Recherche en cours…')}</p>}
           {result.isFetched && !result.isFetching && !hasResults && (
-            <p className="p-4 text-center text-sm text-mute">{t('Aucun résultat pour « {query} »').replace('{query}', query)}</p>
+            <p className="p-4 text-center text-sm text-mute">
+              {t('Aucun résultat pour « {query} »').replace('{query}', query)}
+            </p>
           )}
           {result.data?.map(
             (g) =>
@@ -485,7 +497,12 @@ export function AppLayout() {
           collapsed ? 'w-[76px]' : 'w-[260px]',
         )}
       >
-        <div className={clsx('flex shrink-0 items-center border-b py-4', collapsed ? 'justify-center px-2' : 'justify-start gap-3 px-5')}>
+        <div
+          className={clsx(
+            'flex shrink-0 items-center border-b py-4',
+            collapsed ? 'justify-center px-2' : 'justify-start gap-3 px-5',
+          )}
+        >
           <button
             className="grid h-8 w-8 shrink-0 place-items-center rounded text-brand hover:bg-sunken"
             onClick={() => setCollapsed(!collapsed)}
@@ -501,7 +518,13 @@ export function AppLayout() {
           )}
         </div>
         <SideNav items={items} counts={counts} collapsed={collapsed} />
-        <SideFoot name={name} role={user?.role} avatar={user?.avatar} onLogout={handleLogout} collapsed={collapsed} />
+        <SideFoot
+          name={name}
+          role={user?.role}
+          avatar={user?.avatar}
+          onLogout={handleLogout}
+          collapsed={collapsed}
+        />
       </aside>
 
       {open && (

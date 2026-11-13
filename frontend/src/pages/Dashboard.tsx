@@ -296,7 +296,7 @@ export default function DashboardPage() {
                 icon={<Stethoscope className="h-5 w-5" />}
                 label="Consultations"
                 value={num(d.consultations.total)}
-                hint={`${d.consultations.today} ${t('aujourd\'hui')}`}
+                hint={`${d.consultations.today} ${t("aujourd'hui")}`}
               />,
             );
           if (d.doctors)

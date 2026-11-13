@@ -46,21 +46,20 @@ L'API répond sur <http://127.0.0.1:8000/api/> et Swagger sur <http://127.0.0.1:
 | `USE_POSTGRES` | `false` | `true` pour utiliser PostgreSQL |
 | `DB_NAME` `DB_USER` `DB_PASSWORD` `DB_HOST` | — | requis si `USE_POSTGRES=true` |
 | `DB_PORT` | `5432` | port PostgreSQL |
-| `EMAIL_HOST` | vide | serveur SMTP; vide = e-mails affichés dans la console |
-| `EMAIL_PORT` | `587` | port SMTP |
-| `EMAIL_USE_TLS` | `true` | activer STARTTLS (mettre `false` avec SSL) |
-| `EMAIL_USE_SSL` | `false` | activer SSL implicite (ne pas combiner avec TLS) |
-| `EMAIL_HOST_USER` `EMAIL_HOST_PASSWORD` | — | identifiants SMTP; garder le mot de passe uniquement dans `.env` |
-| `DEFAULT_FROM_EMAIL` | utilisateur SMTP ou adresse d'exemple | adresse expéditrice autorisée par le fournisseur |
-| `EMAIL_TIMEOUT` | `10` | délai maximal de connexion SMTP, en secondes |
+| `RESEND_API_KEY` | vide en développement | clé API Resend; obligatoire en production pour créer un compte ou réinitialiser un mot de passe |
+| `DEFAULT_FROM_EMAIL` | `onboarding@resend.dev` en développement | adresse expéditrice vérifiée dans Resend; obligatoire en production |
 | `PASSWORD_RESET_URL` | `http://localhost:5173/reset-password` | page du front qui reçoit le lien de réinitialisation |
+| `DJANGO_SECURE_SSL_REDIRECT` | `true` hors DEBUG | redirige les requêtes HTTP vers HTTPS |
+| `DJANGO_SESSION_COOKIE_SECURE` `DJANGO_CSRF_COOKIE_SECURE` | `true` hors DEBUG | cookies transmis uniquement en HTTPS |
+| `DJANGO_SECURE_HSTS_SECONDS` | `31536000` hors DEBUG | durée HSTS; ne pas activer avant que HTTPS fonctionne partout |
+| `DJANGO_BEHIND_HTTPS_PROXY` | `false` | `true` si le reverse proxy fixe `X-Forwarded-Proto` |
 
-Pour recevoir les e-mails dans une boîte avec Brevo, renseigner les paramètres SMTP dans `backend/.env` : serveur `smtp-relay.brevo.com`, port `587`, TLS activé et SSL désactivé. Dans Brevo, utiliser l'identifiant SMTP et la **clé SMTP** (pas la clé API) pour `EMAIL_HOST_USER` et `EMAIL_HOST_PASSWORD`. `DEFAULT_FROM_EMAIL` doit être une adresse expéditrice vérifiée dans Brevo. Ne pas partager ni commiter la clé SMTP.
+En production, définis aussi explicitement `DJANGO_SECRET_KEY` (au moins 50 caractères aléatoires), `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `USE_POSTGRES=true`, les paramètres PostgreSQL, `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL` et `PASSWORD_RESET_URL` en HTTPS. L'application refuse de démarrer si ces paramètres requis manquent.
 
 ## Tests
 
 ```bash
-python manage.py test                    # 83 tests
+python manage.py test                    # 122 tests
 python manage.py test users              # une app
 python manage.py test users.test_rbac    # un module
 ```

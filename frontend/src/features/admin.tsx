@@ -1,6 +1,14 @@
 import { ResourcePage, ResourceConfig } from '@/components/ResourcePage';
 import type { FieldDef } from '@/components/FormModal';
-import { Badge, StatusBadge, PageHeader, DataTable, Pagination, Column, TONES } from '@/components/ui';
+import {
+  Badge,
+  StatusBadge,
+  PageHeader,
+  DataTable,
+  Pagination,
+  Column,
+  TONES,
+} from '@/components/ui';
 import { Tabs } from './common';
 import { useList, useAction } from '@/lib/queries';
 import { useAuth } from '@/lib/auth';
@@ -118,14 +126,30 @@ const userCfg: ResourceConfig<User> = {
       hideOnMobile: true,
     },
     { key: 'e', header: 'Email', render: (u) => u.email },
-    { key: 'r', header: 'Rôle', render: (u) => <Badge tone={ROLE_TONE[u.role] ?? 'mute'}>{label(u.role)}</Badge> },
+    {
+      key: 'r',
+      header: 'Rôle',
+      render: (u) => <Badge tone={ROLE_TONE[u.role] ?? 'mute'}>{label(u.role)}</Badge>,
+    },
     { key: 's', header: 'Statut', render: (u) => <StatusBadge value={u.status} /> },
   ],
   fields: [
     { name: 'first_name', label: 'Prénom', type: 'text', required: true, formStep: 'Identité' },
     { name: 'last_name', label: 'Nom', type: 'text', required: true, formStep: 'Identité' },
-    { name: 'email', label: 'Email (identifiant de connexion)', type: 'email', required: true, formStep: 'Compte' },
-    { name: 'username', label: "Nom d'utilisateur", type: 'text', required: true, formStep: 'Compte' },
+    {
+      name: 'email',
+      label: 'Email (identifiant de connexion)',
+      type: 'email',
+      required: true,
+      formStep: 'Compte',
+    },
+    {
+      name: 'username',
+      label: "Nom d'utilisateur",
+      type: 'text',
+      required: true,
+      formStep: 'Compte',
+    },
     {
       name: 'password',
       label: 'Mot de passe provisoire',
@@ -361,10 +385,7 @@ export function AdminPage() {
   // uniquement les profils staff (doctor, réception, labo, pharmacie, caisse).
   const roleOptions = useMemo(() => opts(isSuperuser ? ALL_ROLES : STAFF_ROLES), [isSuperuser]);
   const userFields: FieldDef[] = useMemo(
-    () =>
-      userCfg.fields.map((f) =>
-        f.name === 'role' ? { ...f, options: roleOptions } : f,
-      ),
+    () => userCfg.fields.map((f) => (f.name === 'role' ? { ...f, options: roleOptions } : f)),
     [roleOptions],
   );
   return (
