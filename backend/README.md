@@ -43,8 +43,9 @@ L'API répond sur <http://127.0.0.1:8000/api/> et Swagger sur <http://127.0.0.1:
 | `DJANGO_DEBUG` | `true` | `false` en production |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1,...` | hôtes servis, séparés par des virgules |
 | `CORS_ALLOWED_ORIGINS` | `localhost:5173`, `127.0.0.1:5173`, `localhost:3000` | origines du front autorisées |
-| `USE_POSTGRES` | `false` | `true` pour utiliser PostgreSQL |
-| `DB_NAME` `DB_USER` `DB_PASSWORD` `DB_HOST` | — | requis si `USE_POSTGRES=true` |
+| `DATABASE_URL` | vide | URI PostgreSQL complète (ex. URI de connexion Supabase); active PostgreSQL si renseignée |
+| `USE_POSTGRES` | `false` | `true` pour utiliser PostgreSQL avec les variables `DB_*` |
+| `DB_NAME` `DB_USER` `DB_PASSWORD` `DB_HOST` | — | requis si `USE_POSTGRES=true` et `DATABASE_URL` vide |
 | `DB_PORT` | `5432` | port PostgreSQL |
 | `RESEND_API_KEY` | vide en développement | clé API Resend; obligatoire en production pour créer un compte ou réinitialiser un mot de passe |
 | `DEFAULT_FROM_EMAIL` | `onboarding@resend.dev` en développement | adresse expéditrice vérifiée dans Resend; obligatoire en production |
@@ -54,7 +55,20 @@ L'API répond sur <http://127.0.0.1:8000/api/> et Swagger sur <http://127.0.0.1:
 | `DJANGO_SECURE_HSTS_SECONDS` | `31536000` hors DEBUG | durée HSTS; ne pas activer avant que HTTPS fonctionne partout |
 | `DJANGO_BEHIND_HTTPS_PROXY` | `false` | `true` si le reverse proxy fixe `X-Forwarded-Proto` |
 
-En production, définis aussi explicitement `DJANGO_SECRET_KEY` (au moins 50 caractères aléatoires), `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `USE_POSTGRES=true`, les paramètres PostgreSQL, `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL` et `PASSWORD_RESET_URL` en HTTPS. L'application refuse de démarrer si ces paramètres requis manquent.
+En production, définis aussi explicitement `DJANGO_SECRET_KEY` (au moins 50 caractères aléatoires), `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DATABASE_URL` ou `USE_POSTGRES=true` avec les paramètres PostgreSQL, `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL` et `PASSWORD_RESET_URL` en HTTPS. L'application refuse de démarrer si ces paramètres requis manquent.
+
+### Utiliser Supabase
+
+1. Dans le tableau de bord Supabase, ouvre **Connect** et copie l'URI PostgreSQL
+   (le pooler de session est conseillé si le réseau de l'hébergeur ne prend pas en charge IPv6).
+2. Colle cette URI dans `DATABASE_URL` dans `backend/.env`. Elle contient un mot de passe :
+   ne la partage pas et ne la commite jamais. La connexion exige SSL.
+3. Depuis `backend/`, lance `python manage.py migrate` pour créer les tables de l'application
+   dans le projet Supabase, puis `python manage.py createsuperuser` pour créer le premier compte.
+
+Cette configuration utilise la base PostgreSQL de Supabase avec l'authentification Django ;
+elle n'utilise pas Supabase Auth. Les données existantes dans `db.sqlite3` ne sont pas copiées
+par `migrate` : cette commande crée uniquement le schéma.
 
 ## Tests
 

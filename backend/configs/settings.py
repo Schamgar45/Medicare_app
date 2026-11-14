@@ -15,6 +15,7 @@ import os
 import sys
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 from django.core.exceptions import ImproperlyConfigured
 
 try:  # charge le fichier .env s'il existe (python-dotenv)
@@ -73,8 +74,10 @@ SECURE_REFERRER_POLICY = "same-origin"
 if not DEBUG:
     if not os.getenv("DJANGO_ALLOWED_HOSTS", "").strip():
         raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must list the production hostnames.")
-    if not env_bool("USE_POSTGRES", False):
-        raise ImproperlyConfigured("USE_POSTGRES=true is required when DJANGO_DEBUG=false.")
+    if not env_bool("USE_POSTGRES", False) and not os.getenv("DATABASE_URL", "").strip():
+        raise ImproperlyConfigured(
+            "USE_POSTGRES=true or DATABASE_URL is required when DJANGO_DEBUG=false."
+        )
     if len(SECRET_KEY) < 50 or len(set(SECRET_KEY)) < 5:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must be a long, random production secret.")
 
@@ -149,24 +152,57 @@ WSGI_APPLICATION = "configs.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-if env_bool("USE_POSTGRES", False):
-    required_db_settings = ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST")
-    missing_db_settings = [name for name in required_db_settings if not os.getenv(name)]
-    if missing_db_settings:
+
+def _postgres_database_settings_from_url(database_url):
+    try:
+        parsed_database_url = urlsplit(database_url)
+        database_port = parsed_database_url.port or 5432
+    except ValueError as exc:
         raise ImproperlyConfigured(
-            "Missing PostgreSQL settings: " + ", ".join(missing_db_settings)
+            "DATABASE_URL must be a valid PostgreSQL connection URL."
+        ) from exc
+
+    database_settings = {
+        "NAME": unquote(parsed_database_url.path.lstrip("/")),
+        "USER": unquote(parsed_database_url.username or ""),
+        "PASSWORD": unquote(parsed_database_url.password or ""),
+        "HOST": parsed_database_url.hostname or "",
+        "PORT": database_port,
+    }
+    if parsed_database_url.scheme not in ("postgres", "postgresql") or not all(
+        database_settings[key] for key in ("NAME", "USER", "PASSWORD", "HOST")
+    ):
+        raise ImproperlyConfigured(
+            "DATABASE_URL must include a PostgreSQL scheme, database, user, password, and host."
         )
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
+    return database_settings
+
+
+database_url = os.getenv("DATABASE_URL", "").strip()
+if env_bool("USE_POSTGRES", False) or database_url:
+    if database_url:
+        database_settings = _postgres_database_settings_from_url(database_url)
+    else:
+        required_db_settings = ("DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST")
+        missing_db_settings = [name for name in required_db_settings if not os.getenv(name)]
+        if missing_db_settings:
+            raise ImproperlyConfigured(
+                "Missing PostgreSQL settings: " + ", ".join(missing_db_settings)
+            )
+        database_settings = {
             "NAME": os.environ["DB_NAME"],
             "USER": os.environ["DB_USER"],
             "PASSWORD": os.environ["DB_PASSWORD"],
             "HOST": os.environ["DB_HOST"],
             "PORT": os.getenv("DB_PORT", "5432"),
+        }
+
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            **database_settings,
             "OPTIONS": {
                 "sslmode": "require",
-                "channel_binding": "require",
             },
         }
     }
