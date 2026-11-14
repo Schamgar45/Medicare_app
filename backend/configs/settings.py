@@ -56,6 +56,9 @@ if not SECRET_KEY:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DEBUG is off.")
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0,::1")
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Les valeurs sûres sont activées automatiquement hors développement et restent
 # configurables pour les déploiements derrière un reverse proxy TLS.
@@ -72,7 +75,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 
 if not DEBUG:
-    if not os.getenv("DJANGO_ALLOWED_HOSTS", "").strip():
+    if not os.getenv("DJANGO_ALLOWED_HOSTS", "").strip() and not RENDER_EXTERNAL_HOSTNAME:
         raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must list the production hostnames.")
     if not env_bool("USE_POSTGRES", False) and not os.getenv("DATABASE_URL", "").strip():
         raise ImproperlyConfigured(
@@ -120,6 +123,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -250,6 +254,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Fichiers médias téléversés par les utilisateurs (photos de profil).
 # En développement, configs/urls.py les sert via static(). En production,

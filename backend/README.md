@@ -57,6 +57,26 @@ L'API répond sur <http://127.0.0.1:8000/api/> et Swagger sur <http://127.0.0.1:
 
 En production, définis aussi explicitement `DJANGO_SECRET_KEY` (au moins 50 caractères aléatoires), `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DATABASE_URL` ou `USE_POSTGRES=true` avec les paramètres PostgreSQL, `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL` et `PASSWORD_RESET_URL` en HTTPS. L'application refuse de démarrer si ces paramètres requis manquent.
 
+### Déployer le backend sur Render
+
+Le fichier [`../render.yaml`](../render.yaml) configure le service Render (Python 3.12,
+Gunicorn, migrations au démarrage, fichiers statiques servis par WhiteNoise et vérification
+`/health`). Dans Render, crée un **Blueprint** depuis le dépôt GitHub et renseigne les variables
+secrètes demandées :
+
+- `DATABASE_URL` : URI PostgreSQL Supabase (ne pas la mettre dans Git).
+- `CORS_ALLOWED_ORIGINS` : URL exacte du site Vercel, par exemple `https://mon-site.vercel.app`.
+- `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL` et `PASSWORD_RESET_URL` : configuration email et URL
+  HTTPS de réinitialisation du front.
+
+Render génère `DJANGO_SECRET_KEY`; le nom d’hôte Render est ajouté automatiquement aux hôtes
+autorisés. Après le premier déploiement, définis `VITE_API_URL` dans les variables Vercel sur
+l’URL publique Render (sans slash final), puis redéploie le front.
+
+Le disque du service Render gratuit est éphémère : les photos de profil téléversées localement
+ne sont pas un stockage durable. Pour les conserver en production, configure un stockage persistant
+ou déplace les médias vers Supabase Storage.
+
 ### Utiliser Supabase
 
 1. Dans le tableau de bord Supabase, ouvre **Connect** et copie l'URI PostgreSQL

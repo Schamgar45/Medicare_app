@@ -23,6 +23,7 @@ dist/
 db.sqlite3
 db.sqlite3-journal
 *.sqlite3
+backend/staticfiles/
 
 # --- Fichiers médias téléversés (photos de profil, etc.) ---
 backend/media/
