@@ -1,0 +1,7 @@
+**/.env
+**/.venv/**
+**/node_modules/**
+**/db.sqlite3
+**/media/**
+backend/**/tests.py
+backend/**/test_*.py
