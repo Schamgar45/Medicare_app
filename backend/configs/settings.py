@@ -255,16 +255,13 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STORAGES = {
-    "default": {
-        "BACKEND": (
-            "storages.backends.s3.S3Storage"
-            if os.getenv("SUPABASE_S3_ENDPOINT_URL")
-            else "django.core.files.storage.FileSystemStorage"
-        ),
+DEFAULT_STORAGE = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+if os.getenv("SUPABASE_S3_ENDPOINT_URL"):
+    DEFAULT_STORAGE = {
+        "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
             "bucket_name": os.getenv("SUPABASE_STORAGE_BUCKET", "avatars"),
-            "endpoint_url": os.getenv("SUPABASE_S3_ENDPOINT_URL", ""),
+            "endpoint_url": os.getenv("SUPABASE_S3_ENDPOINT_URL"),
             "region_name": os.getenv("SUPABASE_S3_REGION", ""),
             "access_key": os.getenv("SUPABASE_S3_ACCESS_KEY_ID", ""),
             "secret_key": os.getenv("SUPABASE_S3_SECRET_ACCESS_KEY", ""),
@@ -274,7 +271,9 @@ STORAGES = {
             "file_overwrite": False,
             "addressing_style": "path",
         },
-    },
+    }
+STORAGES = {
+    "default": DEFAULT_STORAGE,
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
