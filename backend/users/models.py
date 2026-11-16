@@ -1,8 +1,17 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager as DjangoUserManager
+from django.utils.text import slugify
+from pathlib import Path
 
 from .validators import validate_phone
+
+
+def avatar_upload_to(instance, filename):
+    """Use portable ASCII object keys for S3-compatible media storage."""
+    suffix = Path(filename).suffix.lower()
+    stem = slugify(Path(filename).stem, allow_unicode=False) or "avatar"
+    return f"avatars/{stem[:80]}{suffix}"
 
 
 class UserManager(DjangoUserManager):
@@ -56,7 +65,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
 
     avatar = models.ImageField(
-        upload_to="avatars/",
+        upload_to=avatar_upload_to,
         blank=True,
         null=True,
         help_text="Photo de profil (optionnelle).",
