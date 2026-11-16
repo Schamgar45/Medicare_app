@@ -256,15 +256,32 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "default": {
+        "BACKEND": (
+            "storages.backends.s3.S3Storage"
+            if os.getenv("SUPABASE_S3_ENDPOINT_URL")
+            else "django.core.files.storage.FileSystemStorage"
+        ),
+        "OPTIONS": {
+            "bucket_name": os.getenv("SUPABASE_STORAGE_BUCKET", "avatars"),
+            "endpoint_url": os.getenv("SUPABASE_S3_ENDPOINT_URL", ""),
+            "region_name": os.getenv("SUPABASE_S3_REGION", ""),
+            "access_key": os.getenv("SUPABASE_S3_ACCESS_KEY_ID", ""),
+            "secret_key": os.getenv("SUPABASE_S3_SECRET_ACCESS_KEY", ""),
+            # Private bucket: Django returns short-lived signed URLs for avatars.
+            "querystring_auth": True,
+            "querystring_expire": int(os.getenv("SUPABASE_STORAGE_URL_EXPIRE", "3600")),
+            "file_overwrite": False,
+            "addressing_style": "path",
+        },
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
 
-# Fichiers médias téléversés par les utilisateurs (photos de profil).
-# En développement, configs/urls.py les sert via static(). En production,
-# c'est le serveur web (nginx, etc.) ou un stockage objet qui doit les servir.
+# Les avatars restent en local en développement et partent vers Supabase Storage
+# en production quand SUPABASE_S3_ENDPOINT_URL est défini.
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 

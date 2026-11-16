@@ -87,7 +87,7 @@ urlpatterns = [
     ),
 ]
 
-# Sert les fichiers médias (photos de profil) téléversés en développement.
-# À ne JAMAIS utiliser en production : le serveur web doit s'en charger.
+# Le stockage local des médias est servi seulement en développement; en production,
+# Supabase Storage fournit directement les URL publiques des avatars.
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

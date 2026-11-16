@@ -73,9 +73,12 @@ Render génère `DJANGO_SECRET_KEY`; le nom d’hôte Render est ajouté automat
 autorisés. Après le premier déploiement, définis `VITE_API_URL` dans les variables Vercel sur
 l’URL publique Render (sans slash final), puis redéploie le front.
 
-Le disque du service Render gratuit est éphémère : les photos de profil téléversées localement
-ne sont pas un stockage durable. Pour les conserver en production, configure un stockage persistant
-ou déplace les médias vers Supabase Storage.
+Le stockage local du service Render gratuit est éphémère. Pour conserver les avatars, configure
+Supabase Storage avec un bucket privé `avatars`, puis ajoute dans Render les variables
+`SUPABASE_S3_ENDPOINT_URL`, `SUPABASE_S3_REGION`, `SUPABASE_S3_ACCESS_KEY_ID`,
+`SUPABASE_S3_SECRET_ACCESS_KEY`. Génère les clés S3 dans
+Supabase Storage → Configuration → S3; elles donnent un accès serveur étendu et ne doivent
+jamais être exposées au frontend ou commitées.
 
 ### Utiliser Supabase
 
