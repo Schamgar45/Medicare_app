@@ -17,6 +17,7 @@ from datetime import timedelta
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 from django.core.exceptions import ImproperlyConfigured
+from botocore.config import Config as S3ClientConfig
 
 try:  # charge le fichier .env s'il existe (python-dotenv)
     from dotenv import load_dotenv
@@ -270,6 +271,14 @@ if os.getenv("SUPABASE_S3_ENDPOINT_URL"):
             "querystring_expire": int(os.getenv("SUPABASE_STORAGE_URL_EXPIRE", "3600")),
             "file_overwrite": False,
             "addressing_style": "path",
+            # Supabase Storage S3 does not implement optional AWS checksum
+            # headers; newer botocore versions otherwise add them by default.
+            "client_config": S3ClientConfig(
+                request_checksum_calculation="when_required",
+                response_checksum_validation="when_required",
+                s3={"addressing_style": "path"},
+                signature_version="s3v4",
+            ),
         },
     }
 STORAGES = {
