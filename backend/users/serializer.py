@@ -14,6 +14,10 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.auth.password_validation import validate_password
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -145,20 +149,24 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         clear = validated_data.pop("clear_avatar", False)
         validated_data.pop("current_password", None)
         avatar = validated_data.get("avatar")
+        old_avatar = instance.avatar if instance.avatar and (clear or avatar) else None
 
         if clear:
-            # Suppression explicite de la photo (fichier + champ en base).
-            if instance.avatar:
-                instance.avatar.delete(save=False)
+            # Effacer la référence en base même si le stockage objet est indisponible.
             instance.avatar = None
             validated_data.pop("avatar", None)
-        elif avatar and instance.avatar and instance.avatar.name:
-            # Remplacement : on purge l'ancien fichier pour éviter les orphelins.
-            instance.avatar.delete(save=False)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
+
+        # Ne jamais laisser un échec de suppression de l'ancien objet annuler
+        # le remplacement déjà enregistré (ex. ancienne clé Unicode invalide).
+        if old_avatar:
+            try:
+                old_avatar.delete(save=False)
+            except Exception:
+                logger.warning("Could not delete replaced avatar object", exc_info=True)
         return instance
 
 
