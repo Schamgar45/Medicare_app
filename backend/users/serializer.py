@@ -15,6 +15,12 @@ from datetime import timedelta
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.auth.password_validation import validate_password
 import logging
+from io import BytesIO
+from pathlib import Path
+
+from PIL import Image, ImageOps
+from django.core.files.base import ContentFile
+from django.utils.text import slugify
 
 
 logger = logging.getLogger(__name__)
@@ -77,7 +83,6 @@ class UserSerializer(serializers.ModelSerializer):
         except Exception as e:
             raise serializers.ValidationError(getattr(e, "messages", [str(e)]))
 
-
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     """Mise à jour du profil par l'utilisateur lui-même.
 
@@ -120,6 +125,24 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
             return validate_phone(value)
         except Exception as e:
             raise serializers.ValidationError(getattr(e, "messages", [str(e)]))
+
+    def validate_avatar(self, uploaded):
+        """Normalize and compress profile photos before sending them to storage."""
+        if uploaded.size > 5 * 1024 * 1024:
+            raise serializers.ValidationError("Image trop volumineuse (5 Mo max).")
+        try:
+            uploaded.seek(0)
+            with Image.open(uploaded) as source:
+                image = ImageOps.exif_transpose(source)
+                image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+                image = image.convert("RGBA" if "A" in image.getbands() else "RGB")
+                output = BytesIO()
+                image.save(output, format="WEBP", quality=82, method=6)
+        except Exception as exc:
+            raise serializers.ValidationError("Impossible de lire cette image.") from exc
+
+        stem = slugify(Path(uploaded.name).stem, allow_unicode=False) or "avatar"
+        return ContentFile(output.getvalue(), name=f"{stem[:80]}.webp")
 
     def validate(self, attrs):
         email = attrs.get("email")
