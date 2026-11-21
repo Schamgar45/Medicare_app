@@ -13,7 +13,7 @@ class HealthCheckTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
-            {"status": "ok", "email_transport": "test"},
+            {"status": "ok", "diag_version": 2, "email_transport": "test"},
         )
 
     def test_health_endpoint_only_accepts_get(self):

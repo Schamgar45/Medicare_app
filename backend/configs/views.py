@@ -11,6 +11,7 @@ def health_check(request):
     return JsonResponse(
         {
             "status": "ok",
+            "diag_version": 2,
             "email_transport": email_transport(),
         }
     )
