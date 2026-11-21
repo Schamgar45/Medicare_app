@@ -11,12 +11,13 @@ def email_transport():
     """Transport réellement utilisé, sans exposer de secret (utile pour /health)."""
     if settings.TESTING:
         return "test"
-    if settings.SMTP_CONFIGURED:
-        return "smtp"
-    if settings.RESEND_API_KEY and not (
-        settings.DEBUG and "@resend.dev" in settings.DEFAULT_FROM_EMAIL
+    if (
+        settings.RESEND_API_KEY
+        and not settings.SMTP_CONFIGURED
+        and not (settings.DEBUG and "@resend.dev" in settings.DEFAULT_FROM_EMAIL)
     ):
         return "resend"
+    # Hors Resend, c'est le backend Django qui décide réellement (smtp/console).
     backend = settings.EMAIL_BACKEND
     if "smtp" in backend:
         return "smtp"
