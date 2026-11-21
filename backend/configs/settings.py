@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 
+import logging
 import os
 import sys
 from datetime import timedelta
@@ -396,6 +397,10 @@ CORS_ALLOWED_ORIGINS = env_list(
     "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000",
 )
 
+# Deux transports possibles, sans domaine à acheter :
+#  1. Resend (clé API) — nécessite un expéditeur vérifié ;
+#  2. SMTP classique (Gmail, Brevo, ...) — aucun domaine vérifié requis.
+# Sans clé Resend, c'est toujours le backend Django (EMAIL_BACKEND) qui envoie.
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND") or (
     "django.core.mail.backends.locmem.EmailBackend"
@@ -404,9 +409,35 @@ EMAIL_BACKEND = os.getenv("EMAIL_BACKEND") or (
     if DEBUG
     else "django.core.mail.backends.smtp.EmailBackend"
 )
+EMAIL_HOST = os.getenv("EMAIL_HOST", "").strip()
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587").strip() or 587)
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "").strip()
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "30").strip() or 30)
+SMTP_CONFIGURED = bool(EMAIL_HOST and EMAIL_HOST_USER and EMAIL_HOST_PASSWORD)
+if EMAIL_USE_TLS and EMAIL_USE_SSL:
+    raise ImproperlyConfigured(
+        "EMAIL_USE_TLS and EMAIL_USE_SSL cannot both be enabled."
+    )
+
+# Par défaut, l'expéditeur SMTP est le compte utilisé pour se connecter.
 DEFAULT_FROM_EMAIL = (
-    os.getenv("DEFAULT_FROM_EMAIL", "").strip() or "onboarding@resend.dev"
+    os.getenv("DEFAULT_FROM_EMAIL", "").strip()
+    or EMAIL_HOST_USER
+    or "onboarding@resend.dev"
 )
+# Si un ancien expéditeur de test Resend est resté configuré, il ne peut pas
+# servir avec Gmail/Brevo : on reprend l'adresse du compte SMTP.
+if SMTP_CONFIGURED and "@resend.dev" in DEFAULT_FROM_EMAIL:
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+if not TESTING and RESEND_API_KEY and not SMTP_CONFIGURED and "@resend.dev" in DEFAULT_FROM_EMAIL:
+    logging.getLogger("configs.settings").warning(
+        "Resend test sender in use (%s): emails can only be delivered to the "
+        "Resend account email. Set DEFAULT_FROM_EMAIL to a verified sender.",
+        DEFAULT_FROM_EMAIL,
+    )
 
 # URL de la page du FRONT qui reçoit ?uid=...&token=... puis appelle
 # POST /api/auth/password-reset-confirm/
@@ -417,9 +448,15 @@ PASSWORD_RESET_URL = os.getenv(
 if not DEBUG:
     if not CORS_ALLOWED_ORIGINS:
         raise ImproperlyConfigured("CORS_ALLOWED_ORIGINS must contain the production frontend origin.")
-    if not RESEND_API_KEY:
-        raise ImproperlyConfigured("RESEND_API_KEY is required to send account and reset emails.")
-    if not os.getenv("DEFAULT_FROM_EMAIL", "").strip():
-        raise ImproperlyConfigured("DEFAULT_FROM_EMAIL must be a verified sender in production.")
+    if not RESEND_API_KEY and not SMTP_CONFIGURED:
+        raise ImproperlyConfigured(
+            "Configure RESEND_API_KEY or SMTP settings (EMAIL_HOST, EMAIL_HOST_USER, "
+            "EMAIL_HOST_PASSWORD) to send account and reset emails."
+        )
+    if "@resend.dev" in DEFAULT_FROM_EMAIL:
+        raise ImproperlyConfigured(
+            "DEFAULT_FROM_EMAIL must be a verified sender (or your SMTP address) "
+            "in production."
+        )
     if not PASSWORD_RESET_URL.startswith("https://"):
         raise ImproperlyConfigured("PASSWORD_RESET_URL must use HTTPS in production.")

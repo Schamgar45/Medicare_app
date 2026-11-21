@@ -36,9 +36,21 @@ services:
         sync: false
       - key: CORS_ALLOWED_ORIGINS
         sync: false
-      - key: RESEND_API_KEY
-        sync: false
+      # Transport e-mail : SMTP gratuit (Gmail/Brevo), sans domaine vérifié.
+      # Ajouter RESEND_API_KEY manuellement seulement si un domaine Resend est vérifié.
       - key: DEFAULT_FROM_EMAIL
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "true"
+      - key: EMAIL_USE_SSL
+        value: "false"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
         sync: false
       - key: PASSWORD_RESET_URL
         sync: false

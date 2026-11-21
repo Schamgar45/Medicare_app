@@ -258,6 +258,7 @@ export function ForgotPage() {
   useLanguage();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   return (
     <Shell title="Mot de passe oublié" subtitle="Nous vous envoyons un lien de réinitialisation">
@@ -271,13 +272,15 @@ export function ForgotPage() {
           onSubmit={async (e) => {
             e.preventDefault();
             setBusy(true);
+            setError('');
             try {
               await api.post('/auth/password-reset/', { email });
-            } catch {
-              /* même réponse */
+              setSent(true);
+            } catch (err) {
+              setError(apiError(err).message);
+            } finally {
+              setBusy(false);
             }
-            setSent(true);
-            setBusy(false);
           }}
         >
           <FieldD icon={Mail} label="Email">
@@ -289,6 +292,14 @@ export function ForgotPage() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </FieldD>
+          {error && (
+            <p
+              className="rounded-xl bg-red-500/15 px-4 py-3 text-sm font-medium text-red-300"
+              role="alert"
+            >
+              {t(error)}
+            </p>
+          )}
           <button className={primaryBtn} disabled={busy}>
             {busy && <Spinner />}
             {t('Envoyer le lien')}

@@ -25,10 +25,18 @@ Après toute modification de cette variable, redéployer le frontend.
 | `DJANGO_ALLOWED_HOSTS` | domaine Vercel du backend, sans `https://` |
 | `DATABASE_URL` | URI PostgreSQL de Supabase; saisir dans le tableau de bord Vercel, jamais dans Git |
 | `CORS_ALLOWED_ORIGINS` | URL HTTPS exacte du frontend Vercel |
-| `RESEND_API_KEY` | clé API Resend, saisie directement dans Vercel |
-| `DEFAULT_FROM_EMAIL` | expéditeur vérifié dans Resend |
+| `EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` |
+| `EMAIL_HOST` | `smtp.gmail.com` (ou `smtp-brevo.com`) |
+| `EMAIL_PORT` | `587` |
+| `EMAIL_USE_TLS` | `true` |
+| `EMAIL_USE_SSL` | `false` |
+| `EMAIL_HOST_USER` | adresse Gmail (ou identifiant SMTP Brevo) |
+| `EMAIL_HOST_PASSWORD` | mot de passe d'application Google (ou clé SMTP Brevo) |
+| `DEFAULT_FROM_EMAIL` | `MediCare Connect <adresse@gmail.com>` |
 | `PASSWORD_RESET_URL` | URL HTTPS du frontend suivie de `/reset-password` |
 | `DJANGO_BEHIND_HTTPS_PROXY` | `true` |
+
+`RESEND_API_KEY` reste une alternative (avec un domaine vérifié), mais les identifiants SMTP sont prioritaires dès qu'ils sont renseignés. Un projet Vercel `*.vercel.app` ne peut pas être vérifié comme domaine Resend.
 
 La valeur locale de `backend/.env` ne doit pas être importée telle quelle : ses paramètres de développement ne conviennent pas en production. Après avoir obtenu le domaine backend, remplacer son domaine dans `DJANGO_ALLOWED_HOSTS`, puis le domaine frontend dans CORS, `PASSWORD_RESET_URL` et `VITE_API_URL`.
 

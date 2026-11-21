@@ -53,15 +53,24 @@ L'API répond sur <http://127.0.0.1:8000/api/> et Swagger sur <http://127.0.0.1:
 | `DB_PORT` | `5432` | port PostgreSQL |
 | `DJANGO_DB_CONN_MAX_AGE` | `60` en production, `0` en développement | durée de réutilisation des connexions PostgreSQL (secondes); baisse-la si le pool de connexions est limité |
 | `DJANGO_SLOW_REQUEST_MS` | `1000` | durée au-delà de laquelle une requête lente est journalisée (sans URL complète ni données métier) |
-| `RESEND_API_KEY` | vide en développement | clé API Resend; obligatoire en production pour créer un compte ou réinitialiser un mot de passe |
-| `DEFAULT_FROM_EMAIL` | `onboarding@resend.dev` en développement | adresse expéditrice vérifiée dans Resend; obligatoire en production |
+| `RESEND_API_KEY` | vide | clé API Resend (alternative à SMTP); nécessite un domaine vérifié |
+| `DEFAULT_FROM_EMAIL` | `EMAIL_HOST_USER` puis `onboarding@resend.dev` | adresse expéditrice; obligatoire en production |
+| `EMAIL_BACKEND` | console en DEBUG, SMTP en production | backend Django utilisé quand `RESEND_API_KEY` est vide |
+| `EMAIL_HOST` `EMAIL_PORT` | `587` | serveur SMTP (ex. `smtp.gmail.com`, `smtp-brevo.com`) |
+| `EMAIL_HOST_USER` `EMAIL_HOST_PASSWORD` | — | identifiants SMTP; requis en production si Resend n'est pas utilisé |
+| `EMAIL_USE_TLS` `EMAIL_USE_SSL` | `true` / `false` | chiffrement SMTP (ne pas activer les deux) |
+| `EMAIL_TIMEOUT` | `30` | délai d'envoi SMTP (secondes) |
 | `PASSWORD_RESET_URL` | `http://localhost:5173/reset-password` | page du front qui reçoit le lien de réinitialisation |
 | `DJANGO_SECURE_SSL_REDIRECT` | `true` hors DEBUG | redirige les requêtes HTTP vers HTTPS |
 | `DJANGO_SESSION_COOKIE_SECURE` `DJANGO_CSRF_COOKIE_SECURE` | `true` hors DEBUG | cookies transmis uniquement en HTTPS |
 | `DJANGO_SECURE_HSTS_SECONDS` | `31536000` hors DEBUG | durée HSTS; ne pas activer avant que HTTPS fonctionne partout |
 | `DJANGO_BEHIND_HTTPS_PROXY` | `false` | `true` si le reverse proxy fixe `X-Forwarded-Proto` |
 
-En production, définis aussi explicitement `DJANGO_SECRET_KEY` (au moins 50 caractères aléatoires), `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DATABASE_URL` ou `USE_POSTGRES=true` avec les paramètres PostgreSQL, `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL` et `PASSWORD_RESET_URL` en HTTPS. L'application refuse de démarrer si ces paramètres requis manquent.
+En production, définis aussi explicitement `DJANGO_SECRET_KEY` (au moins 50 caractères aléatoires), `DJANGO_ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`, `DATABASE_URL` ou `USE_POSTGRES=true` avec les paramètres PostgreSQL, `DEFAULT_FROM_EMAIL` et `PASSWORD_RESET_URL` en HTTPS. Pour l'envoi d'e-mails, configure **soit** `RESEND_API_KEY` + un expéditeur vérifié, **soit** `EMAIL_HOST`, `EMAIL_HOST_USER` et `EMAIL_HOST_PASSWORD` (SMTP gratuit, sans domaine à vérifier). L'application refuse de démarrer si aucun des deux n'est configuré.
+
+Si les deux transports sont configurés, **SMTP est prioritaire** : inutile de supprimer une ancienne clé Resend, renseigner les variables SMTP suffit.
+
+Un site hébergé sur `*.vercel.app` ne peut pas être vérifié comme domaine d'expédition Resend : c'est normal, l'URL Vercel sert uniquement dans `PASSWORD_RESET_URL`. Le domaine du `from` est indépendant et peut venir d'un compte Gmail/Brevo gratuit.
 
 ### Déployer le backend sur Render
 
@@ -72,8 +81,10 @@ secrètes demandées :
 
 - `DATABASE_URL` : URI PostgreSQL Supabase (ne pas la mettre dans Git).
 - `CORS_ALLOWED_ORIGINS` : URL exacte du site Vercel, par exemple `https://mon-site.vercel.app`.
-- `RESEND_API_KEY`, `DEFAULT_FROM_EMAIL` et `PASSWORD_RESET_URL` : configuration email et URL
-  HTTPS de réinitialisation du front.
+- `DEFAULT_FROM_EMAIL` et `PASSWORD_RESET_URL` : expéditeur et URL HTTPS de réinitialisation du front.
+- Pour le transport : soit `RESEND_API_KEY`, soit `EMAIL_HOST`, `EMAIL_HOST_USER` et
+  `EMAIL_HOST_PASSWORD` (SMTP). Une ancienne variable `RESEND_API_KEY` peut rester : les
+  identifiants SMTP priment dessus.
 
 Render génère `DJANGO_SECRET_KEY`; le nom d’hôte Render est ajouté automatiquement aux hôtes
 autorisés. Après le premier déploiement, définis `VITE_API_URL` dans les variables Vercel sur
