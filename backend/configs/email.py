@@ -7,6 +7,26 @@ from django.core.mail import EmailMultiAlternatives
 logger = logging.getLogger("configs.email")
 
 
+def email_transport():
+    """Transport réellement utilisé, sans exposer de secret (utile pour /health)."""
+    if settings.TESTING:
+        return "test"
+    if settings.SMTP_CONFIGURED:
+        return "smtp"
+    if settings.RESEND_API_KEY and not (
+        settings.DEBUG and "@resend.dev" in settings.DEFAULT_FROM_EMAIL
+    ):
+        return "resend"
+    backend = settings.EMAIL_BACKEND
+    if "smtp" in backend:
+        return "smtp"
+    if "console" in backend:
+        return "console"
+    if "locmem" in backend:
+        return "locmem"
+    return "django"
+
+
 def _send_with_django(subject, message, recipient_list, html_message, from_email):
     """Envoi via le backend Django configuré (SMTP en production, console en DEBUG)."""
     email = EmailMultiAlternatives(
@@ -21,19 +41,29 @@ def _send_with_django(subject, message, recipient_list, html_message, from_email
 
 
 def send_email(subject, message, recipient_list, html_message=None, from_email=None):
+    transport = email_transport()
+
     # Priorité au backend Django dès que SMTP est configuré : une ancienne clé
     # Resend (avec l'expéditeur de test) ne doit pas casser les envois.
-    # Sans clé Resend, c'est aussi Django qui envoie (console en DEBUG).
-    use_django = (
-        settings.TESTING
-        or not settings.RESEND_API_KEY
-        or settings.SMTP_CONFIGURED
-        or (settings.DEBUG and "@resend.dev" in settings.DEFAULT_FROM_EMAIL)
-    )
-    if use_django:
-        return _send_with_django(
-            subject, message, recipient_list, html_message, from_email
+    if transport != "resend":
+        try:
+            sent = _send_with_django(
+                subject, message, recipient_list, html_message, from_email
+            )
+        except Exception:
+            logger.exception(
+                "Email delivery failed (transport=%s, recipients=%d)",
+                transport,
+                len(recipient_list),
+            )
+            raise
+        logger.info(
+            "Email sent (transport=%s, backend=%s, recipients=%d)",
+            transport,
+            settings.EMAIL_BACKEND.rsplit(".", 1)[-1],
+            len(recipient_list),
         )
+        return sent
 
     resend.api_key = settings.RESEND_API_KEY
     params = {
@@ -46,7 +76,7 @@ def send_email(subject, message, recipient_list, html_message=None, from_email=N
         params["html"] = html_message
 
     try:
-        return resend.Emails.send(params)
+        result = resend.Emails.send(params)
     except Exception:
         logger.exception(
             "Resend delivery failed (from=%s, recipients=%d)",
@@ -54,3 +84,5 @@ def send_email(subject, message, recipient_list, html_message=None, from_email=N
             len(recipient_list),
         )
         raise
+    logger.info("Email sent (transport=resend, recipients=%d)", len(recipient_list))
+    return result

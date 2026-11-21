@@ -11,7 +11,10 @@ class HealthCheckTests(TestCase):
         response = self.client.get(reverse("health"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "ok"})
+        self.assertEqual(
+            response.json(),
+            {"status": "ok", "email_transport": "test"},
+        )
 
     def test_health_endpoint_only_accepts_get(self):
         response = self.client.post(reverse("health"))

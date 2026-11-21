@@ -3,10 +3,17 @@ from django.db import connection
 from django.db.utils import DatabaseError
 from django.views.decorators.http import require_GET
 
+from .email import email_transport
+
 
 @require_GET
 def health_check(request):
-    return JsonResponse({"status": "ok"})
+    return JsonResponse(
+        {
+            "status": "ok",
+            "email_transport": email_transport(),
+        }
+    )
 
 
 @require_GET

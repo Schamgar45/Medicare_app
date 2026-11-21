@@ -284,6 +284,10 @@ class PasswordResetView(APIView):
         users = User.objects.filter(email__iexact=email)
         if not users.exists():
             # do not reveal whether the email exists
+            logger.info(
+                "Password reset: no account (domain=%s)",
+                email.rsplit("@", 1)[-1],
+            )
             return Response({"detail": "If an account exists, a reset email was sent."})
 
         for user in users:

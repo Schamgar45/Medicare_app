@@ -163,7 +163,17 @@ LOGGING = {
             "handlers": ["performance_console"],
             "level": "WARNING",
             "propagate": False,
-        }
+        },
+        "configs.email": {
+            "handlers": ["performance_console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "users.views": {
+            "handlers": ["performance_console"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }
 
