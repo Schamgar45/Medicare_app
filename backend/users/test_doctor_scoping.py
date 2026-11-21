@@ -1,6 +1,6 @@
 """Un médecin ne voit et ne modifie que ses propres données."""
 
-from datetime import date, time
+from datetime import date, time, timedelta
 
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
@@ -267,7 +267,7 @@ class DoctorWriteScopingTests(DoctorScopingBase):
                 "appointment_number": "RDV-NEW",
                 "patient": self.pat_x.id,
                 "doctor": self.doc_a.id,
-                "appointment_date": "2026-11-01",
+                "appointment_date": (date.today() + timedelta(days=1)).isoformat(),
                 "appointment_time": "09:00:00",
             },
             format="json",

@@ -62,6 +62,7 @@ class AppointmentViewSet(DoctorScopedMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_update(self, serializer):
+        self.check_doctor_write(serializer, creating=False)
         previous_doctor = serializer.instance.doctor
         appointment = serializer.save()
         doctors = {
