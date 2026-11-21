@@ -53,7 +53,7 @@ Il n'y a pas de proxy Vite : les appels sont cross-origin, donc vérifie que
 ```bash
 cd backend
 python manage.py check           # configuration
-python manage.py test            # 83 tests (~6 min)
+python manage.py test            # suite backend complète
 
 cd ../frontend
 npm run typecheck                # tsc -b
@@ -70,8 +70,9 @@ npm run build                    # tsc -b && vite build
   est suivi, le reste de `.vscode/` est ignoré.
 - **Le virtualenv est dans `backend/.venv`**, jamais à la racine.
 - **Aucun secret commité** : tout passe par `.env`, lui-même ignoré.
-- Les types du front sont écrits à la main dans `frontend/src/lib/types.ts` ; ils sont à maintenir
-  alignés sur `backend/schema.yaml`.
+- Les types métier du front sont générés depuis `backend/schema.yaml` dans
+  `frontend/src/lib/api-schema.d.ts`. Après une modification d'API, régénère le schéma backend
+  puis lance `npm run api:types` dans `frontend/` ; la CI contrôle qu'aucun fichier généré ne dérive.
 
 ## Déploiement — contrôles et limites métier
 
@@ -86,9 +87,10 @@ vérifie les domaines, CORS et l'expéditeur Resend du vrai environnement.
 
 Points métier à valider avec l'équipe du centre avant utilisation réelle :
 
-1. `current_stock` ignore maintenant les lots expirés, mais le parcours complet de
-   délivrance et de correction des stocks doit être vérifié avec les règles de la pharmacie.
-2. Les factures et mouvements de stock ne sont pas générés automatiquement depuis une
-   consultation ou une ordonnance.
-3. `npm audit` : **0 vulnérabilité** (après migration `vite` 5→8, `tailwindcss` 3→4,
+1. `current_stock` ignore les lots expirés et les changements de quantité des lots sont historisés.
+   La délivrance d'une ordonnance ne décrémente pas encore les lots : le choix de lot et les règles
+   de délivrance doivent être validés avec le pharmacien avant d'automatiser cette étape.
+2. La création d'une facture importe les actes éligibles; elle n'est pas déclenchée
+   automatiquement à la fin d'une consultation ou d'un examen.
+3. `npm audit --omit=dev --audit-level=high` : **0 vulnérabilité de production** (après migration `vite` 5→8, `tailwindcss` 3→4,
    `react-router-dom` 6→7). Les détails de ces migrations sont dans `frontend/README.md`.

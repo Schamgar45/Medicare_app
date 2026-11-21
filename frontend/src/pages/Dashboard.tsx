@@ -187,6 +187,36 @@ function useServerNow() {
   return now;
 }
 
+function DashboardClock({ name, hint }: { name: string; hint: string }) {
+  const now = useServerNow();
+  const date = now.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  const time = now.toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+  return (
+    <>
+      <p className="flex items-center gap-2 text-[10px] font-medium uppercase text-sub">
+        <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+        {date} · {time}
+      </p>
+      <h1 className="mt-1 text-[22px] font-bold tracking-tight text-ink sm:text-2xl">
+        {t('Tableau de bord')}
+      </h1>
+      <p className="mt-0.5 text-sm text-sub">
+        {greeting(now)} {name} · {t(hint)}
+      </p>
+    </>
+  );
+}
+
 export default function DashboardPage() {
   useLanguage();
   const { user, doctor, can } = useAuth();
@@ -200,20 +230,6 @@ export default function DashboardPage() {
   });
   const d = q.data;
   const name = user?.first_name || user?.username || '';
-  // Horloge/heure serveur (dérive de l'appareil corrigée par le back) : tick chaque seconde
-  const now = useServerNow();
-  const date = now.toLocaleDateString('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-  const time = now.toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-  const hello = greeting(now);
   const quick = [
     can('RECEPTIONIST') && {
       to: '/patients?new=1',
@@ -444,16 +460,7 @@ export default function DashboardPage() {
             <section aria-label={t('Tableau de bord paginé')} aria-roledescription="carrousel">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="flex items-center gap-2 text-[10px] font-medium uppercase text-sub">
-                    <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                    {date} · {time}
-                  </p>
-                  <h1 className="mt-1 text-[22px] font-bold tracking-tight text-ink sm:text-2xl">
-                    {t('Tableau de bord')}
-                  </h1>
-                  <p className="mt-0.5 text-sm text-sub">
-                    {hello} {name} · {t(views[cur].hint)}
-                  </p>
+                  <DashboardClock name={name} hint={views[cur].hint} />
                 </div>
                 <PageTabs view={cur} count={views.length} onChange={setView} />
               </div>

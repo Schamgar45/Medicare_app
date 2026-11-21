@@ -478,6 +478,8 @@ const apptFields = (role?: string) => {
       label: 'Date',
       type: 'date' as const,
       required: true,
+      minToday: true,
+      hint: 'Les rendez-vous passés ne peuvent pas être créés ou reprogrammés.',
       formStep: 'Horaire',
     },
     {
@@ -485,6 +487,7 @@ const apptFields = (role?: string) => {
       label: 'Heure',
       type: 'time' as const,
       required: true,
+      minTimeToday: true,
       formStep: 'Horaire',
     },
     {

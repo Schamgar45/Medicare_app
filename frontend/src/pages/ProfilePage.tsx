@@ -376,7 +376,7 @@ export function ProfilePage() {
               <select
                 className="input"
                 value={form.gender}
-                onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                onChange={(e) => setForm({ ...form, gender: e.target.value as User['gender'] })}
               >
                 {GENDER_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>

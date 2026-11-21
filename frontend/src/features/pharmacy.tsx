@@ -118,10 +118,10 @@ const batchCfg: ResourceConfig<MedicationBatch> = {
       key: 'e',
       header: 'Péremption',
       render: (b) => {
-        const exp = new Date(b.expiration_date) < new Date();
+        const exp = !!b.expiration_date && new Date(b.expiration_date) < new Date();
         return (
           <span className={exp ? 'font-semibold text-bad' : ''}>
-            {fmtDate(b.expiration_date)}
+            {b.expiration_date ? fmtDate(b.expiration_date) : '—'}
             {exp && ' · périmé'}
           </span>
         );
@@ -141,7 +141,13 @@ const batchCfg: ResourceConfig<MedicationBatch> = {
     },
     { name: 'batch_number', label: 'N° de lot', type: 'text', required: true },
     { name: 'expiration_date', label: 'Date de péremption', type: 'date', required: true },
-    { name: 'quantity', label: 'Quantité', type: 'number', required: true },
+    {
+      name: 'quantity',
+      label: 'Quantité initiale',
+      type: 'number',
+      required: true,
+      hint: 'Une entrée de stock est créée automatiquement pour cette quantité.',
+    },
     { name: 'purchase_price', label: "Prix d'achat", type: 'number', step: '0.01' },
   ],
 };
@@ -186,6 +192,7 @@ const moveCfg: ResourceConfig<StockMovement> = {
       name: 'batch',
       label: 'Lot',
       type: 'relation',
+      required: true,
       relation: {
         path: 'medication-batches',
         label: (b) => `${b.batch_number} · ${b.medication_name}`,

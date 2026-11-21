@@ -44,6 +44,10 @@ export interface FieldDef {
   max?: string;
   /** Champ date : refuse toute valeur postérieure à aujourd'hui (ex. date de naissance). */
   maxToday?: boolean;
+  /** Champ date : refuse toute valeur antérieure à aujourd'hui (ex. rendez-vous). */
+  minToday?: boolean;
+  /** Champ heure : pour la date du jour, refuse les heures déjà écoulées. */
+  minTimeToday?: boolean;
 }
 
 function schemaFor(fields: FieldDef[]) {
@@ -59,11 +63,22 @@ function schemaFor(fields: FieldDef[]) {
             .min(1, t('Champ obligatoire'))
             .refine((v) => isValidPhone(v), PHONE_MESSAGE)
         : withPhone;
-    } else if (f.type === 'date' && (f.maxToday || f.max)) {
+    } else if (f.type === 'date' && (f.maxToday || f.max || f.minToday)) {
       const limit = f.maxToday ? todayISO() : f.max!;
       const futureMsg = t('La date ne peut pas être dans le futur.');
+      const pastMsg = t('La date ne peut pas être dans le passé.');
       // Vide ("" / null / undefined) autorisé pour un champ non requis, sinon comparaison ISO.
       const notFuture = (v: unknown) => v == null || v === '' || String(v) <= limit;
+      const notPast = (v: unknown) => v == null || v === '' || String(v) >= todayISO();
+      if (f.minToday) {
+        shape[f.name] = f.required
+          ? z
+              .any()
+              .refine((v) => v != null && v !== '', t('Champ obligatoire'))
+              .refine(notPast, pastMsg)
+          : z.any().refine(notPast, pastMsg);
+        continue;
+      }
       shape[f.name] = f.required
         ? z
             .any()
@@ -165,8 +180,11 @@ export function FormModal({
     reset,
     setError,
     trigger,
+    watch,
     formState: { errors, isSubmitting },
   } = form;
+  const selectedDate = watch('appointment_date');
+  const currentTime = new Date().toTimeString().slice(0, 5);
 
   useEffect(() => {
     if (open) {
@@ -401,6 +419,13 @@ export function FormModal({
                         ? todayISO()
                         : f.max
                       : undefined
+                  }
+                  min={
+                    f.type === 'date' && f.minToday
+                      ? todayISO()
+                      : f.type === 'time' && f.minTimeToday && selectedDate === todayISO()
+                        ? currentTime
+                        : undefined
                   }
                   autoComplete={f.type === 'password' ? 'new-password' : 'off'}
                   {...register(f.name)}

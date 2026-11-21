@@ -210,7 +210,12 @@ function Notifications() {
   useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const q = useList<AppNotification>('notifications', { ordering: '-created_at', page_size: 10 });
+  const q = useList<AppNotification>(
+    'notifications',
+    { ordering: '-created_at', page_size: 10 },
+    true,
+    30_000,
+  );
   const mark = useAction('notifications');
   const unread = q.data?.results.filter((n) => !n.is_read).length ?? 0;
   useEffect(() => {
