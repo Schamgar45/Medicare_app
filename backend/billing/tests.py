@@ -1,7 +1,11 @@
 from django.contrib.auth import get_user_model
+from django.db import connection
 from rest_framework.test import APITestCase
+from django.test.utils import CaptureQueriesContext
 
 from patients.models import Patient
+from audit.models import AuditLog
+from notifications.models import Notification
 from services.models import MedicalService
 from consultations.models import Consultation
 from doctor.models import Doctor
@@ -9,7 +13,7 @@ from laboratory.models import LabRequest, LabTest
 from pharmacy.models import Medication
 from prescriptions.models import Prescription, PrescriptionItem
 
-from .models import Invoice, InvoiceItem
+from .models import Invoice, InvoiceItem, Payment
 
 User = get_user_model()
 
@@ -62,6 +66,9 @@ class InvoiceServiceTests(APITestCase):
         )
         self.assertEqual(response.data["patient_detail"]["last_name"], "Ndaye")
         self.assertEqual(response.data["patient_detail"]["patient_number"], "PAT-1")
+        notification = Notification.objects.get(user=self.cashier)
+        self.assertEqual(notification.type, Notification.Type.INVOICE)
+        self.assertIn("FAC-1", notification.message)
 
     def test_department_is_optional(self):
         response = self.create()
@@ -92,6 +99,26 @@ class InvoiceServiceTests(APITestCase):
 
     def test_unknown_department_is_refused(self):
         self.assertEqual(self.create(service=99999).status_code, 400)
+
+    def test_changing_discount_recalculates_invoice_totals(self):
+        from .models import InvoiceItem
+
+        invoice_id = self.create().data["id"]
+        invoice = Invoice.objects.get(pk=invoice_id)
+        InvoiceItem.objects.create(
+            invoice=invoice, description="Consultation", quantity=1, unit_price=10000
+        )
+
+        response = self.client.patch(
+            f"/api/invoices/{invoice_id}/",
+            {"discount": "1500", "tax": "500"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["subtotal"], "10000.00")
+        self.assertEqual(response.data["total"], "9000.00")
+        self.assertEqual(response.data["balance"], "9000.00")
 
     def test_filter_invoices_by_department(self):
         self.create(service=self.labo.id)
@@ -172,6 +199,39 @@ class PaymentReceiptTests(APITestCase):
         self.assertEqual(data["received_by_name"], "Claire Caisse")
         self.assertEqual(float(data["invoice_total"]), 10000)
         self.assertEqual(float(data["invoice_balance"]), 6000)
+        notification = Notification.objects.get(user=cashier)
+        self.assertEqual(notification.type, Notification.Type.PAYMENT)
+        self.assertIn("PAY-1", notification.message)
+
+
+class PaymentDeletionTests(APITestCase):
+    def test_admin_deletion_recalculates_invoice_and_keeps_audit_record(self):
+        admin = make_user("ADMIN")
+        patient = Patient.objects.create(
+            patient_number="PAT-PAY-DEL", first_name="Aline", last_name="Ndaye"
+        )
+        invoice = Invoice.objects.create(invoice_number="FAC-PAY-DEL", patient=patient)
+        InvoiceItem.objects.create(
+            invoice=invoice, description="Analyse", quantity=1, unit_price=5000
+        )
+        payment = Payment.objects.create(
+            payment_number="PAY-TO-DELETE",
+            invoice=invoice,
+            amount=1000,
+            payment_method=Payment.PaymentMethod.CASH,
+        )
+        invoice.recalculate_totals()
+        self.client.force_authenticate(admin)
+
+        response = self.client.delete(f"/api/payments/{payment.pk}/")
+
+        self.assertEqual(response.status_code, 204)
+        invoice.refresh_from_db()
+        self.assertEqual(invoice.amount_paid, 0)
+        self.assertEqual(invoice.balance, 5000)
+        audit = AuditLog.objects.get(table_name="billing.Payment", record_id=payment.pk)
+        self.assertEqual(audit.action, AuditLog.Action.DELETE)
+        self.assertEqual(audit.old_data["amount"], "1000.00")
 
 
 class InvoiceDeletionTests(APITestCase):
@@ -374,6 +434,23 @@ class BillableActivityImportTests(APITestCase):
         self.assertEqual(second.status_code, 201, second.data)
         self.assertEqual(len(first.data["items"]), 4)
         self.assertEqual(second.data["items"], [])
+
+    def test_invoice_creation_query_count_does_not_grow_per_activity(self):
+        for index in range(8):
+            Consultation.objects.create(
+                consultation_number=f"CONS-BILL-PERF-{index}",
+                patient=self.patient,
+                doctor=self.doctor,
+                status=Consultation.Status.COMPLETED,
+            )
+
+        with CaptureQueriesContext(connection) as queries:
+            response = self.create_invoice()
+
+        self.assertEqual(response.status_code, 201, response.data)
+        # Ten consults, one lab and one partially dispensed prescription line are
+        # imported with fixed query groups, not per-row existence/totals queries.
+        self.assertLessEqual(len(queries), 30, [q["sql"] for q in queries])
 
     def test_cancelled_invoice_does_not_block_rebilling_its_activities(self):
         first = self.create_invoice()

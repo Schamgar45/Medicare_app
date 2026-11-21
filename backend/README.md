@@ -5,9 +5,13 @@ laboratoire, pharmacie, facturation, notifications et tableau de bord.
 
 - **Framework** : Django 6 + Django REST Framework
 - **Base de données** : SQLite en développement (`db.sqlite3`), PostgreSQL en production
-- **Auth** : JWT (email + mot de passe), refresh court, blacklist au logout
+- **Auth** : JWT par e-mail, accès 15 min, refresh 7 jours et révocation au logout
 - **Docs interactives** : `/api/docs/` (Swagger UI) et `/api/schema/` (OpenAPI)
 - **Langue / fuseau** : `fr`, `Africa/Bujumbura`
+
+Les jetons d'accès sont invalidés immédiatement après un changement de mot de passe; les jetons
+refresh correspondants ne peuvent plus renouveler la session. Le front conserve les jetons dans
+`sessionStorage` et demande leur révocation au logout ou à la fermeture de l'onglet.
 
 > Le détail des changements d'API destinés au front est dans [`../BACKEND_CHANGES.md`](../BACKEND_CHANGES.md).
 
@@ -47,6 +51,8 @@ L'API répond sur <http://127.0.0.1:8000/api/> et Swagger sur <http://127.0.0.1:
 | `USE_POSTGRES` | `false` | `true` pour utiliser PostgreSQL avec les variables `DB_*` |
 | `DB_NAME` `DB_USER` `DB_PASSWORD` `DB_HOST` | — | requis si `USE_POSTGRES=true` et `DATABASE_URL` vide |
 | `DB_PORT` | `5432` | port PostgreSQL |
+| `DJANGO_DB_CONN_MAX_AGE` | `60` en production, `0` en développement | durée de réutilisation des connexions PostgreSQL (secondes); baisse-la si le pool de connexions est limité |
+| `DJANGO_SLOW_REQUEST_MS` | `1000` | durée au-delà de laquelle une requête lente est journalisée (sans URL complète ni données métier) |
 | `RESEND_API_KEY` | vide en développement | clé API Resend; obligatoire en production pour créer un compte ou réinitialiser un mot de passe |
 | `DEFAULT_FROM_EMAIL` | `onboarding@resend.dev` en développement | adresse expéditrice vérifiée dans Resend; obligatoire en production |
 | `PASSWORD_RESET_URL` | `http://localhost:5173/reset-password` | page du front qui reçoit le lien de réinitialisation |
@@ -96,7 +102,7 @@ par `migrate` : cette commande crée uniquement le schéma.
 ## Tests
 
 ```bash
-python manage.py test                    # 122 tests
+python manage.py test                    # suite backend complète
 python manage.py test users              # une app
 python manage.py test users.test_rbac    # un module
 ```
@@ -111,7 +117,22 @@ Après toute modification de l'API :
 
 ```bash
 python manage.py spectacular --file schema.yaml --validate
+cd ../frontend
+npm run api:types
 ```
+
+La CI régénère et compare le schéma et les types TypeScript à chaque changement d'API.
+
+## Disponibilité et sauvegardes
+
+- `/health` vérifie que le processus web répond; `/ready` vérifie également l'accès à PostgreSQL.
+- Render utilise `/health` comme contrôle de vie. Utilise `/ready` pour les alertes de disponibilité
+  qui doivent détecter une base inaccessible.
+- Active les sauvegardes automatiques PostgreSQL/Supabase selon la rétention requise par le centre.
+  Planifie un test périodique de restauration vers une base isolée; une sauvegarde non restaurée
+  n'est pas une procédure de reprise vérifiée.
+- Pour les connexions PostgreSQL persistantes, `DJANGO_DB_CONN_MAX_AGE` vaut 60 secondes par défaut
+  en production; ajuste-le à la limite de connexions et au mode de pool du fournisseur.
 
 ## Structure
 

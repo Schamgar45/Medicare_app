@@ -132,7 +132,24 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "configs.middleware.SlowRequestLoggingMiddleware",
 ]
+
+DJANGO_SLOW_REQUEST_MS = int(
+    os.getenv("DJANGO_SLOW_REQUEST_MS", "60000" if TESTING else "1000")
+)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"performance_console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "configs.performance": {
+            "handlers": ["performance_console"],
+            "level": "WARNING",
+            "propagate": False,
+        }
+    },
+}
 
 ROOT_URLCONF = "configs.urls"
 
@@ -206,6 +223,12 @@ if env_bool("USE_POSTGRES", False) or database_url:
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             **database_settings,
+            # Réutilise les connexions entre requêtes Gunicorn; configurable pour
+            # les offres PostgreSQL avec une limite de connexions réduite.
+            "CONN_MAX_AGE": int(
+                os.getenv("DJANGO_DB_CONN_MAX_AGE", "60" if not DEBUG else "0")
+            ),
+            "CONN_HEALTH_CHECKS": True,
             "OPTIONS": {
                 "sslmode": "require",
             },
@@ -237,6 +260,12 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+# Les scénarios d'authentification restent couverts sans payer le coût PBKDF2
+# des centaines de fois pendant la suite; cette configuration ne s'applique
+# qu'à `manage.py test` et n'affecte jamais l'application déployée.
+if TESTING:
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 
 # Internationalization
@@ -357,6 +386,8 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "ALGORITHM": "HS256",
     "AUTH_HEADER_TYPES": ("Bearer",),
+    # Invalide les jetons déjà émis après un changement de mot de passe.
+    "CHECK_REVOKE_TOKEN": True,
 }
 
 # CORS : origines du front autorisées à appeler l'API

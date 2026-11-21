@@ -72,6 +72,35 @@ class AuthAPITests(APITestCase):
             "http://testserver/media/avatars/profile.png",
         )
 
+    def test_password_change_revokes_existing_access_and_refresh_tokens(self):
+        login = self.client.post(
+            "/api/auth/login/",
+            {"email": "test@example.com", "password": "pass1234"},
+            format="json",
+        )
+        self.assertEqual(login.status_code, 200, login.data)
+        access = login.data["access"]
+        refresh = login.data["refresh"]
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        changed = self.client.post(
+            "/api/auth/change-password/",
+            {
+                "old_password": "pass1234",
+                "new_password": "A-very-new-secret-298!",
+                "confirm_password": "A-very-new-secret-298!",
+            },
+            format="json",
+        )
+        self.assertEqual(changed.status_code, 200, changed.data)
+
+        self.assertEqual(self.client.get("/api/auth/profile/").status_code, 401)
+        self.client.credentials()
+        refreshed = self.client.post(
+            "/api/auth/refresh/", {"refresh": refresh}, format="json"
+        )
+        self.assertEqual(refreshed.status_code, 400)
+
     def test_presence_heartbeat_and_expiration(self):
         self.client.force_authenticate(self.user)
         heartbeat = self.client.post("/api/auth/profile/presence/")

@@ -1,6 +1,6 @@
 from datetime import date, datetime, time, timedelta
 
-from django.db.models import Count, F, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import Coalesce, TruncMonth
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -181,13 +181,22 @@ def _pharmacy(ctx):
     )
     low_stock = (
         Medication.objects.filter(is_active=True)
-        .annotate(current_stock=Coalesce(Sum("batches__quantity"), 0))
+        .annotate(
+            current_stock=Coalesce(
+                Sum(
+                    "batches__quantity",
+                    filter=Q(batches__expiration_date__isnull=True)
+                    | Q(batches__expiration_date__gte=today),
+                ),
+                0,
+            )
+        )
         .filter(current_stock__lte=F("minimum_stock"))
         .count()
     )
     consumed = StockMovement.objects.filter(
         movement_type=StockMovement.MovementType.OUT
-    )
+    ).exclude(reason="Ajustement manuel du lot")
     top = (
         consumed.filter(movement_date__gte=_aware(ctx["starts"][0]))
         .values("medication__name")

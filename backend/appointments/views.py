@@ -1,7 +1,10 @@
+from django.db import transaction
 from rest_framework import viewsets
 
 from users.roles import DOCTOR, RECEPTIONIST
 from users.scoping import DoctorScopedMixin
+from notifications.models import Notification
+from notifications.service import send_notification
 
 from .models import Appointment
 from .serializers import AppointmentSerializer
@@ -42,6 +45,37 @@ class AppointmentViewSet(DoctorScopedMixin, viewsets.ModelViewSet):
     ordering_fields = ["id", "appointment_date", "appointment_time", "created_at"]
     ordering = ["-appointment_date", "-appointment_time"]
 
+    @transaction.atomic
     def perform_create(self, serializer):
         self.check_doctor_write(serializer, creating=True)
-        serializer.save(created_by=self.request.user)
+        appointment = serializer.save(created_by=self.request.user)
+        send_notification(
+            user=appointment.doctor.user,
+            title="Nouveau rendez-vous",
+            message=(
+                f"Un rendez-vous avec {appointment.patient.first_name} "
+                f"{appointment.patient.last_name} est prévu le "
+                f"{appointment.appointment_date} à {appointment.appointment_time}."
+            ),
+            notif_type=Notification.Type.APPOINTMENT,
+        )
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        previous_doctor = serializer.instance.doctor
+        appointment = serializer.save()
+        doctors = {
+            previous_doctor.pk: previous_doctor,
+            appointment.doctor.pk: appointment.doctor,
+        }
+        for doctor in doctors.values():
+            send_notification(
+                user=doctor.user,
+                title="Rendez-vous modifié",
+                message=(
+                    f"Le rendez-vous de {appointment.patient.first_name} "
+                    f"{appointment.patient.last_name} est prévu le "
+                    f"{appointment.appointment_date} à {appointment.appointment_time}."
+                ),
+                notif_type=Notification.Type.APPOINTMENT,
+            )

@@ -21,14 +21,20 @@ class PrescriptionDispensingTests(APITestCase):
             password="test-password",
             role="PHARMACIST",
         )
+        cls.admin = User.objects.create_user(
+            username="dispensing-admin",
+            email="dispensing-admin@example.com",
+            password="test-password",
+            role="ADMIN",
+        )
         service = MedicalService.objects.create(name="Dispensing")
-        doctor_user = User.objects.create_user(
+        cls.doctor_user = User.objects.create_user(
             username="dispensing-doctor",
             email="dispensing-doctor@example.com",
             password="test-password",
             role="DOCTOR",
         )
-        doctor = Doctor.objects.create(user=doctor_user, service=service)
+        doctor = Doctor.objects.create(user=cls.doctor_user, service=service)
         patient = Patient.objects.create(
             patient_number="PAT-DISPENSE",
             first_name="Aline",
@@ -79,6 +85,21 @@ class PrescriptionDispensingTests(APITestCase):
         self.second_item.refresh_from_db()
         self.assertEqual(self.first_item.dispensed_quantity, 5)
         self.assertEqual(self.second_item.dispensed_quantity, 3)
+
+    def test_admin_can_dispense_an_approved_prescription(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.dispense({"status": "DISPENSED"})
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["status"], "DISPENSED")
+
+    def test_doctor_cannot_dispense_a_prescription(self):
+        self.client.force_authenticate(self.doctor_user)
+
+        response = self.dispense({"status": "DISPENSED"})
+
+        self.assertEqual(response.status_code, 403)
 
     def test_partial_dispensing_records_actual_quantities(self):
         response = self.dispense(

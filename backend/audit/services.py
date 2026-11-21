@@ -53,3 +53,38 @@ def log_user_action(
         )
     except Exception:
         return None
+
+
+def log_record_action(
+    *, actor, action, table_name, record_id, old=None, new=None, request=None
+):
+    """Trace une action comptable sans copier notes ni données médicales."""
+    try:
+        return AuditLog.objects.create(
+            user=actor if getattr(actor, "pk", None) else None,
+            action=action,
+            table_name=table_name,
+            record_id=record_id,
+            old_data=old,
+            new_data=new,
+            ip_address=client_ip(request),
+            user_agent=(
+                request.META.get("HTTP_USER_AGENT", "")[:500] if request else ""
+            ),
+        )
+    except Exception:
+        return None
+
+
+def snapshot_payment(payment):
+    """Champs financiers nécessaires à la trace; exclut les notes libres."""
+    if payment is None:
+        return None
+    return {
+        "payment_number": payment.payment_number,
+        "invoice_id": payment.invoice_id,
+        "amount": str(payment.amount),
+        "payment_method": payment.payment_method,
+        "status": payment.status,
+        "reference": payment.reference,
+    }

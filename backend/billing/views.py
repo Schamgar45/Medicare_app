@@ -7,6 +7,11 @@ from consultations.models import Consultation
 from laboratory.models import LabRequest
 from prescriptions.models import PrescriptionItem
 from users.roles import CASHIER, RECEPTIONIST
+from users.models import User
+from audit.models import AuditLog
+from audit.services import log_record_action, snapshot_payment
+from notifications.models import Notification
+from notifications.service import send_notification
 
 from .models import (
     BillingItem,
@@ -23,6 +28,19 @@ from .serializers import (
 )
 
 BILLING_STAFF = [RECEPTIONIST, CASHIER]
+
+
+def _notify_billing_staff(title, message, notif_type):
+    for user in User.objects.filter(
+        role__in=BILLING_STAFF,
+        status=User.Status.ACTIVE,
+    ):
+        send_notification(
+            user=user,
+            title=title,
+            message=message,
+            notif_type=notif_type,
+        )
 
 
 class BillingItemViewSet(viewsets.ModelViewSet):
@@ -48,6 +66,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             queryset=InvoiceItem.objects.select_related(
                 "service",
                 "doctor__user",
+                "doctor__service",
                 "consultation",
                 "lab_request",
                 "prescription_item__prescription",
@@ -80,11 +99,29 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             invoice = serializer.save(created_by=self.request.user)
             self._add_unbilled_activities(invoice)
+            _notify_billing_staff(
+                title="Nouvelle facture",
+                message=(
+                    f"La facture {invoice.invoice_number} a été créée pour "
+                    f"{invoice.patient.first_name} {invoice.patient.last_name} "
+                    f"(montant : {invoice.total})."
+                ),
+                notif_type=Notification.Type.INVOICE,
+            )
+            # Reuse the fully eager-loaded list queryset for the create response;
+            # nested invoice lines otherwise fetch their doctor/service per row.
+            serializer.instance = self.get_queryset().get(pk=invoice.pk)
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        invoice = serializer.save()
+        invoice.recalculate_totals()
 
     @staticmethod
     def _add_unbilled_activities(invoice):
+        pending_items = []
         consultation_items = (
-            Consultation.objects.select_for_update()
+            Consultation.objects.select_for_update(of=("self",))
             .filter(
                 patient=invoice.patient,
                 status__in=(Consultation.Status.OPEN, Consultation.Status.COMPLETED),
@@ -93,25 +130,30 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             .select_related("doctor__user", "doctor__service")
             .order_by("consultation_date", "id")
         )
+        invoiced_consultations = set(
+            InvoiceItem.objects.filter(consultation__in=consultation_items)
+            .exclude(invoice__status=Invoice.Status.CANCELLED)
+            .values_list("consultation_id", flat=True)
+        )
         for consultation in consultation_items:
-            already_invoiced = InvoiceItem.objects.filter(
-                consultation=consultation
-            ).exclude(invoice__status=Invoice.Status.CANCELLED)
-            if already_invoiced.exists():
+            if consultation.pk in invoiced_consultations:
                 continue
             doctor = consultation.doctor
             doctor_name = doctor.user.get_full_name() or doctor.user.username
-            InvoiceItem.objects.create(
-                invoice=invoice,
-                consultation=consultation,
-                doctor=doctor,
-                service=doctor.service,
-                description=f"Consultation - Dr {doctor_name}",
-                unit_price=doctor.consultation_fee,
+            pending_items.append(
+                InvoiceItem(
+                    invoice=invoice,
+                    consultation=consultation,
+                    doctor=doctor,
+                    service=doctor.service,
+                    description=f"Consultation - Dr {doctor_name}",
+                    unit_price=doctor.consultation_fee,
+                    total=doctor.consultation_fee,
+                )
             )
 
         exam_items = (
-            LabRequest.objects.select_for_update()
+            LabRequest.objects.select_for_update(of=("self",))
             .filter(
                 patient=invoice.patient,
                 status=LabRequest.Status.VALIDATED,
@@ -120,23 +162,28 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             .select_related("lab_test__service", "doctor__user")
             .order_by("requested_at", "id")
         )
+        invoiced_requests = set(
+            InvoiceItem.objects.filter(lab_request__in=exam_items)
+            .exclude(invoice__status=Invoice.Status.CANCELLED)
+            .values_list("lab_request_id", flat=True)
+        )
         for request in exam_items:
-            already_invoiced = InvoiceItem.objects.filter(
-                lab_request=request
-            ).exclude(invoice__status=Invoice.Status.CANCELLED)
-            if already_invoiced.exists():
+            if request.pk in invoiced_requests:
                 continue
-            InvoiceItem.objects.create(
-                invoice=invoice,
-                lab_request=request,
-                doctor=request.doctor,
-                service=request.lab_test.service,
-                description=request.lab_test.name,
-                unit_price=request.lab_test.price,
+            pending_items.append(
+                InvoiceItem(
+                    invoice=invoice,
+                    lab_request=request,
+                    doctor=request.doctor,
+                    service=request.lab_test.service,
+                    description=request.lab_test.name,
+                    unit_price=request.lab_test.price,
+                    total=request.lab_test.price,
+                )
             )
 
         dispensed_items = (
-            PrescriptionItem.objects.select_for_update()
+            PrescriptionItem.objects.select_for_update(of=("self",))
             .filter(
                 prescription__patient=invoice.patient,
                 prescription__status__in=(
@@ -153,25 +200,34 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             )
             .order_by("prescription__prescription_date", "id")
         )
+        billed_quantities = dict(
+            InvoiceItem.objects.filter(prescription_item__in=dispensed_items)
+            .exclude(invoice__status=Invoice.Status.CANCELLED)
+            .values_list("prescription_item_id")
+            .annotate(total=Sum("quantity"))
+        )
         for item in dispensed_items:
-            billed_quantity = (
-                InvoiceItem.objects.filter(prescription_item=item)
-                .exclude(invoice__status=Invoice.Status.CANCELLED)
-                .aggregate(total=Sum("quantity"))["total"]
-                or 0
-            )
+            billed_quantity = billed_quantities.get(item.pk, 0)
             quantity_to_bill = item.dispensed_quantity - billed_quantity
             if quantity_to_bill <= 0:
                 continue
-            InvoiceItem.objects.create(
-                invoice=invoice,
-                prescription_item=item,
-                medication=item.medication,
-                doctor=item.prescription.doctor,
-                description=item.medication.name,
-                quantity=quantity_to_bill,
-                unit_price=item.medication.unit_price,
+            line_total = item.medication.unit_price * quantity_to_bill
+            pending_items.append(
+                InvoiceItem(
+                    invoice=invoice,
+                    prescription_item=item,
+                    medication=item.medication,
+                    doctor=item.prescription.doctor,
+                    description=item.medication.name,
+                    quantity=quantity_to_bill,
+                    unit_price=item.medication.unit_price,
+                    total=line_total,
+                )
             )
+
+        if pending_items:
+            InvoiceItem.objects.bulk_create(pending_items)
+            invoice.recalculate_totals()
 
     @transaction.atomic
     def perform_destroy(self, instance):
@@ -217,8 +273,11 @@ class InvoiceItemViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_update(self, serializer):
+        previous_invoice = serializer.instance.invoice
         item = serializer.save()
         item.invoice.recalculate_totals()
+        if previous_invoice.pk != item.invoice_id:
+            previous_invoice.recalculate_totals()
 
     @transaction.atomic
     def perform_destroy(self, instance):
@@ -253,8 +312,55 @@ class PaymentViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             payment = serializer.save(received_by=self.request.user)
             payment.invoice.recalculate_totals()
+            if payment.status == Payment.Status.COMPLETED:
+                _notify_billing_staff(
+                    title="Paiement reçu",
+                    message=(
+                        f"Le paiement {payment.payment_number} de {payment.amount} "
+                        f"a été enregistré pour la facture "
+                        f"{payment.invoice.invoice_number}."
+                    ),
+                    notif_type=Notification.Type.PAYMENT,
+                )
+            log_record_action(
+                actor=self.request.user,
+                action=AuditLog.Action.CREATE,
+                table_name="billing.Payment",
+                record_id=payment.pk,
+                new=snapshot_payment(payment),
+                request=self.request,
+            )
 
     @transaction.atomic
     def perform_update(self, serializer):
+        old_invoice = serializer.instance.invoice
+        old = snapshot_payment(serializer.instance)
         payment = serializer.save()
         payment.invoice.recalculate_totals()
+        if old_invoice.pk != payment.invoice_id:
+            old_invoice.recalculate_totals()
+        log_record_action(
+            actor=self.request.user,
+            action=AuditLog.Action.UPDATE,
+            table_name="billing.Payment",
+            record_id=payment.pk,
+            old=old,
+            new=snapshot_payment(payment),
+            request=self.request,
+        )
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        old = snapshot_payment(instance)
+        invoice = instance.invoice
+        payment_id = instance.pk
+        instance.delete()
+        invoice.recalculate_totals()
+        log_record_action(
+            actor=self.request.user,
+            action=AuditLog.Action.DELETE,
+            table_name="billing.Payment",
+            record_id=payment_id,
+            old=old,
+            request=self.request,
+        )

@@ -355,7 +355,11 @@ paths:
   /api/auth/{user_id}/status/:
     post:
       operationId: auth_status_create
-      description: Enable admins to set a user's status to ACTIVE or INACTIVE.
+      description: |-
+        (Historique, gardé pour compatibilité) Définit le statut d'un compte.
+
+        POST /api/auth/<user_id>/status/ {"status": "ACTIVE"|"INACTIVE"|"SUSPENDED"}
+        Préférez PATCH /api/auth/users/<id>/ ou POST .../deactivate|activate.
       parameters:
       - in: path
         name: user_id
@@ -384,6 +388,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+          description: ''
+  /api/auth/change-password/:
+    post:
+      operationId: auth_change_password_create
+      description: |-
+        Change le mot de passe de l'utilisateur connecté.
+
+        POST /api/auth/change-password/ {"old_password", "new_password", "confirm_password"}
+        L'ancien mot de passe est vérifié, et le changement n'est possible qu'une
+        seule fois par période de 7 jours (contrôlé côté serveur).
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
           description: ''
   /api/auth/login/:
     post:
@@ -498,13 +540,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+  /api/auth/profile/presence/:
+    post:
+      operationId: auth_profile_presence_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PresenceResponse'
+          description: ''
   /api/auth/profile/toggle-active/:
     post:
       operationId: auth_profile_toggle_active_create
       description: |-
-        Toggle a user's active status using the `status` field.
+        (Historique, gardé pour compatibilité) Active/désactive un compte.
 
         POST payload: { "user_id": int, "action": "deactivate"|"reactivate" }
+        Préférez PATCH /api/auth/users/<id>/ ou POST .../deactivate|activate.
       tags:
       - auth
       requestBody:
@@ -527,6 +584,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ToggleUserActiveResponse'
+          description: ''
+  /api/auth/profile/update/:
+    patch:
+      operationId: auth_profile_update_partial_update
+      description: |-
+        Met à jour le profil de l'utilisateur connecté.
+
+        PATCH /api/auth/profile/update/ — données libres (prénom, nom, username,
+        e-mail, téléphone, genre, photo). Le rôle et le statut ne sont PAS
+        modifiables ici. Le changement d'e-mail exige le mot de passe actuel.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdateRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
           description: ''
   /api/auth/refresh/:
     post:
@@ -558,8 +646,8 @@ paths:
   /api/auth/register/:
     post:
       operationId: auth_register_create
-      description: 'Création d''un compte du personnel. Réservé à l''ADMIN : le rôle
-        est choisi par l''admin.'
+      description: Création d'un compte. ADMIN=staff réservée au superuser ; le reste
+        à l'ADMIN.
       tags:
       - auth
       requestBody:
@@ -583,14 +671,68 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+  /api/auth/server-time/:
+    get:
+      operationId: auth_server_time_retrieve
+      description: |-
+        Heure courante du serveur (pour salutation/horloge côté client).
+
+        Le client ne doit PAS se fier à l'horloge de l'appareil, qui peut être mal
+        réglée ou dans un autre fuseau. On renvoie l'instant serveur (avec son
+        offset) et le fuseau serveur pour l'affichage/la salutation.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerTimeResponse'
+          description: ''
+  /api/auth/session/close/:
+    post:
+      operationId: auth_session_close_create
+      description: |-
+        Détruit la session d'un onglet lorsque celui-ci est fermé.
+
+        Appelé par le front via ``navigator.sendBeacon`` (corps ``text/plain`` pour
+        éviter un préflight CORS pendant le déchargement de la page). L'endpoint
+        n'exige pas d'authentification : le refresh token est lui-même le secret
+        de la session. Il est mis en liste noire et l'utilisateur repasse hors ligne.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCloseRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionCloseRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionCloseRequestRequest'
+        required: true
+      responses:
+        '205':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
   /api/auth/users/:
     get:
       operationId: auth_users_list
       description: |-
-        Gestion des comptes (ADMIN) : liste, détail, modification (rôle, statut, profil).
+        Gestion des comptes (ADMIN) : liste, détail, modification, suppression.
 
-        La création passe par POST /api/auth/register/ ; il n'y a pas de suppression :
-        on désactive un compte en passant son statut à INACTIVE.
+        La création passe par POST /api/auth/register/.
+        La désactivation (soft-delete) passe par PATCH {"status": "INACTIVE"}
+        ou POST .../deactivate|activate. DELETE supprime définitivement.
       parameters:
       - name: ordering
         required: false
@@ -661,10 +803,11 @@ paths:
     get:
       operationId: auth_users_retrieve
       description: |-
-        Gestion des comptes (ADMIN) : liste, détail, modification (rôle, statut, profil).
+        Gestion des comptes (ADMIN) : liste, détail, modification, suppression.
 
-        La création passe par POST /api/auth/register/ ; il n'y a pas de suppression :
-        on désactive un compte en passant son statut à INACTIVE.
+        La création passe par POST /api/auth/register/.
+        La désactivation (soft-delete) passe par PATCH {"status": "INACTIVE"}
+        ou POST .../deactivate|activate. DELETE supprime définitivement.
       parameters:
       - in: path
         name: id
@@ -686,10 +829,11 @@ paths:
     put:
       operationId: auth_users_update
       description: |-
-        Gestion des comptes (ADMIN) : liste, détail, modification (rôle, statut, profil).
+        Gestion des comptes (ADMIN) : liste, détail, modification, suppression.
 
-        La création passe par POST /api/auth/register/ ; il n'y a pas de suppression :
-        on désactive un compte en passant son statut à INACTIVE.
+        La création passe par POST /api/auth/register/.
+        La désactivation (soft-delete) passe par PATCH {"status": "INACTIVE"}
+        ou POST .../deactivate|activate. DELETE supprime définitivement.
       parameters:
       - in: path
         name: id
@@ -723,10 +867,11 @@ paths:
     patch:
       operationId: auth_users_partial_update
       description: |-
-        Gestion des comptes (ADMIN) : liste, détail, modification (rôle, statut, profil).
+        Gestion des comptes (ADMIN) : liste, détail, modification, suppression.
 
-        La création passe par POST /api/auth/register/ ; il n'y a pas de suppression :
-        on désactive un compte en passant son statut à INACTIVE.
+        La création passe par POST /api/auth/register/.
+        La désactivation (soft-delete) passe par PATCH {"status": "INACTIVE"}
+        ou POST .../deactivate|activate. DELETE supprime définitivement.
       parameters:
       - in: path
         name: id
@@ -747,6 +892,96 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: auth_users_destroy
+      description: |-
+        Gestion des comptes (ADMIN) : liste, détail, modification, suppression.
+
+        La création passe par POST /api/auth/register/.
+        La désactivation (soft-delete) passe par PATCH {"status": "INACTIVE"}
+        ou POST .../deactivate|activate. DELETE supprime définitivement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) utilisateur.
+        required: true
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/users/{id}/activate/:
+    post:
+      operationId: auth_users_activate_create
+      description: Réactive un compte (status=ACTIVE + reset lockout).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) utilisateur.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/auth/users/{id}/deactivate/:
+    post:
+      operationId: auth_users_deactivate_create
+      description: Désactive un compte (status=INACTIVE).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) utilisateur.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -3053,6 +3288,20 @@ paths:
         name: type
         schema:
           type: string
+          enum:
+          - APPOINTMENT
+          - INVOICE
+          - LAB_RESULT
+          - LOW_STOCK
+          - PAYMENT
+          - SYSTEM
+        description: |-
+          * `LAB_RESULT` - Résultat d'examen
+          * `LOW_STOCK` - Stock bas
+          * `APPOINTMENT` - Rendez-vous
+          * `PAYMENT` - Paiement
+          * `INVOICE` - Facture
+          * `SYSTEM` - Système
       tags:
       - notifications
       security:
@@ -3189,6 +3438,103 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/notifications/{id}/send-test/:
+    post:
+      operationId: notifications_send_test_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) notification.
+        required: true
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/mark-all-read/:
+    post:
+      operationId: notifications_mark_all_read_create
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/preferences/:
+    get:
+      operationId: notifications_preferences_retrieve
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+    patch:
+      operationId: notifications_preferences_partial_update
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
   /api/patients/:
     get:
       operationId: patients_list
@@ -4135,6 +4481,49 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/prescriptions/{id}/dispense/:
+    post:
+      operationId: prescriptions_dispense_create
+      description: |-
+        À placer avant ModelViewSet. Réglages déclaratifs par vue :
+
+        doctor_lookup         chemin ORM vers le Doctor propriétaire ("doctor", "prescription__doctor"...)
+        patient_lookup        sinon, chemin ORM vers le Patient ("patient", ou "pk" pour Patient lui-même)
+        doctor_can_create     False : un médecin ne peut pas créer cet objet (ex. patient, rendez-vous)
+        doctor_update_fields  si défini, seuls ces champs sont modifiables par un médecin
+        doctor_must_be_self   champs « médecin » qui doivent désigner le médecin connecté
+        doctor_visible_patient_fields  champs « patient » qui doivent désigner l'un de ses patients
+        doctor_owned_relations  {champ: attribut} : l'objet référencé doit appartenir au médecin
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) prescription.
+        required: true
+      tags:
+      - prescriptions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrescriptionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrescriptionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrescriptionRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prescription'
+          description: ''
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -4847,6 +5236,8 @@ components:
         * `reactivate` - reactivate
     Appointment:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         id:
           type: integer
@@ -4856,11 +5247,23 @@ components:
           maxLength: 50
         patient:
           type: integer
+        patient_detail:
+          allOf:
+          - $ref: '#/components/schemas/PatientBrief'
+          readOnly: true
         doctor:
           type: integer
+        doctor_detail:
+          allOf:
+          - $ref: '#/components/schemas/DoctorBrief'
+          readOnly: true
         service:
           type: integer
           nullable: true
+        service_detail:
+          allOf:
+          - $ref: '#/components/schemas/ServiceBrief'
+          readOnly: true
         appointment_date:
           type: string
           format: date
@@ -4887,20 +5290,23 @@ components:
           readOnly: true
       required:
       - appointment_date
-      - appointment_number
       - appointment_time
       - created_at
       - created_by
       - doctor
+      - doctor_detail
       - id
       - patient
+      - patient_detail
+      - service_detail
       - updated_at
     AppointmentRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         appointment_number:
           type: string
-          minLength: 1
           maxLength: 50
         patient:
           type: integer
@@ -4923,7 +5329,6 @@ components:
           type: string
       required:
       - appointment_date
-      - appointment_number
       - appointment_time
       - doctor
       - patient
@@ -4964,40 +5369,87 @@ components:
       - today
     AuditLog:
       type: object
+      description: 'Journal d''audit en français lisible : « Schamgar a désactivé
+        le compte Jean ».'
       properties:
         id:
           type: integer
           readOnly: true
         user:
           type: integer
+          readOnly: true
           nullable: true
+          description: Acteur de l'action (qui a fait).
+        actor:
+          type: string
+          description: 'Qui a fait l''action : nom complet ou nom d''utilisateur.'
+          readOnly: true
         action:
           type: string
-          maxLength: 100
+          readOnly: true
+        action_label:
+          type: string
+          readOnly: true
+        target_label:
+          type: string
+          description: 'Cible de l''action : « le compte Jean Mukendi » plutôt que
+            users.User #7.'
+          readOnly: true
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              old: {}
+              new: {}
+            required:
+            - field
+            - old
+            - new
+          readOnly: true
+          description: Liste des champs modifiés, avec leurs anciennes et nouvelles
+            valeurs.
         table_name:
           type: string
-          maxLength: 100
+          readOnly: true
         record_id:
           type: integer
-          maximum: 9223372036854775807
-          minimum: -9223372036854775808
-          format: int64
+          readOnly: true
           nullable: true
         old_data:
+          readOnly: true
           nullable: true
         new_data:
+          readOnly: true
           nullable: true
         ip_address:
           type: string
+          readOnly: true
           nullable: true
+        user_agent:
+          type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
           readOnly: true
       required:
       - action
+      - action_label
+      - actor
+      - changes
       - created_at
       - id
+      - ip_address
+      - new_data
+      - old_data
+      - record_id
+      - table_name
+      - target_label
+      - user
+      - user_agent
     BillingItem:
       type: object
       properties:
@@ -5073,8 +5525,46 @@ components:
     BlankEnum:
       enum:
       - ''
+    ChangePasswordRequest:
+      type: object
+      description: |-
+        Changement de mot de passe par l'utilisateur connecté.
+
+        L'ancien mot de passe est exigé ; le nouveau doit être confirmé,
+        différent de l'actuel et conforme aux validateurs Django. La limite
+        « 1 fois / 7 jours » est vérifiée dans la vue (elle dépend de
+        password_changed_at de l'utilisateur).
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        confirm_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - confirm_password
+      - new_password
+      - old_password
+    ChannelEnum:
+      enum:
+      - IN_APP
+      - EMAIL
+      - SMS
+      type: string
+      description: |-
+        * `IN_APP` - In-app
+        * `EMAIL` - Email
+        * `SMS` - SMS
     Consultation:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         id:
           type: integer
@@ -5147,7 +5637,6 @@ components:
           readOnly: true
       required:
       - consultation_date
-      - consultation_number
       - created_at
       - doctor
       - doctor_detail
@@ -5157,10 +5646,11 @@ components:
       - updated_at
     ConsultationRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         consultation_number:
           type: string
-          minLength: 1
           maxLength: 50
         patient:
           type: integer
@@ -5206,7 +5696,6 @@ components:
         status:
           $ref: '#/components/schemas/ConsultationStatusEnum'
       required:
-      - consultation_number
       - doctor
       - patient
     ConsultationStatusEnum:
@@ -5344,9 +5833,23 @@ components:
           readOnly: true
         user:
           type: integer
+        name:
+          type: string
+          nullable: true
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
         specialty:
           type: integer
           nullable: true
+        specialty_name:
+          type: string
+          readOnly: true
         registration_number:
           type: string
           nullable: true
@@ -5354,6 +5857,10 @@ components:
         service:
           type: integer
           nullable: true
+        service_detail:
+          allOf:
+          - $ref: '#/components/schemas/ServiceBrief'
+          readOnly: true
         consultation_fee:
           type: string
           format: decimal
@@ -5370,7 +5877,12 @@ components:
           readOnly: true
       required:
       - created_at
+      - email
       - id
+      - name
+      - phone
+      - service_detail
+      - specialty_name
       - updated_at
       - user
     DoctorBrief:
@@ -5381,6 +5893,7 @@ components:
           readOnly: true
         name:
           type: string
+          nullable: true
           readOnly: true
         registration_number:
           type: string
@@ -5430,6 +5943,8 @@ components:
       - total
     Invoice:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         id:
           type: integer
@@ -5459,6 +5974,7 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
         tax:
           type: string
           format: decimal
@@ -5508,7 +6024,6 @@ components:
       - created_by
       - id
       - invoice_date
-      - invoice_number
       - items
       - patient
       - patient_detail
@@ -5547,6 +6062,29 @@ components:
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
           readOnly: true
+        source_type:
+          type: string
+          readOnly: true
+        source_reference:
+          type: string
+          nullable: true
+          readOnly: true
+        doctor_name:
+          type: string
+          nullable: true
+          readOnly: true
+        doctor_detail:
+          allOf:
+          - $ref: '#/components/schemas/DoctorBrief'
+          readOnly: true
+        service:
+          type: integer
+          readOnly: true
+          nullable: true
+        service_detail:
+          allOf:
+          - $ref: '#/components/schemas/InvoiceService'
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -5554,8 +6092,14 @@ components:
       required:
       - created_at
       - description
+      - doctor_detail
+      - doctor_name
       - id
       - invoice
+      - service
+      - service_detail
+      - source_reference
+      - source_type
       - total
     InvoiceItemRequest:
       type: object
@@ -5611,10 +6155,11 @@ components:
       - phone
     InvoiceRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         invoice_number:
           type: string
-          minLength: 1
           maxLength: 50
         patient:
           type: integer
@@ -5625,6 +6170,7 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
         tax:
           type: string
           format: decimal
@@ -5632,7 +6178,6 @@ components:
         status:
           $ref: '#/components/schemas/InvoiceStatusEnum'
       required:
-      - invoice_number
       - patient
     InvoiceService:
       type: object
@@ -5664,31 +6209,6 @@ components:
         * `PARTIALLY_PAID` - Partially paid
         * `PAID` - Paid
         * `CANCELLED` - Cancelled
-    LabPatient:
-      type: object
-      description: Identité du patient pour l'en-tête des feuilles de résultats.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        patient_number:
-          type: string
-          readOnly: true
-        first_name:
-          type: string
-          readOnly: true
-        last_name:
-          type: string
-          readOnly: true
-        phone:
-          type: string
-          readOnly: true
-      required:
-      - first_name
-      - id
-      - last_name
-      - patient_number
-      - phone
     LabPriorityEnum:
       enum:
       - NORMAL
@@ -5701,6 +6221,8 @@ components:
         * `CRITICAL` - Critical
     LabRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         id:
           type: integer
@@ -5714,12 +6236,13 @@ components:
           type: integer
         patient_detail:
           allOf:
-          - $ref: '#/components/schemas/LabPatient'
+          - $ref: '#/components/schemas/PatientBrief'
           readOnly: true
         doctor:
           type: integer
         doctor_name:
           type: string
+          nullable: true
           readOnly: true
         lab_test:
           type: integer
@@ -5762,15 +6285,15 @@ components:
       - lab_test_detail
       - patient
       - patient_detail
-      - request_number
       - requested_at
       - sample_collected_at
     LabRequestRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         request_number:
           type: string
-          minLength: 1
           maxLength: 50
         consultation:
           type: integer
@@ -5791,7 +6314,6 @@ components:
       - doctor
       - lab_test
       - patient
-      - request_number
     LabRequestStatusEnum:
       enum:
       - REQUESTED
@@ -5830,6 +6352,7 @@ components:
           nullable: true
         validated_by_name:
           type: string
+          nullable: true
           readOnly: true
         result_date:
           type: string
@@ -5894,6 +6417,13 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        service:
+          type: integer
+          nullable: true
+        service_detail:
+          allOf:
+          - $ref: '#/components/schemas/ServiceBrief'
+          readOnly: true
         normal_range:
           type: string
         is_active:
@@ -5906,6 +6436,7 @@ components:
       - created_at
       - id
       - name
+      - service_detail
     LabTestBrief:
       type: object
       properties:
@@ -5935,6 +6466,9 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        service:
+          type: integer
+          nullable: true
         normal_range:
           type: string
         is_active:
@@ -6124,6 +6658,9 @@ components:
           readOnly: true
         medication:
           type: integer
+        medication_name:
+          type: string
+          readOnly: true
         batch_number:
           type: string
           maxLength: 100
@@ -6133,7 +6670,9 @@ components:
           nullable: true
         quantity:
           type: integer
-          readOnly: true
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
         purchase_price:
           type: string
           format: decimal
@@ -6147,7 +6686,7 @@ components:
       - created_at
       - id
       - medication
-      - quantity
+      - medication_name
     MedicationBatchRequest:
       type: object
       properties:
@@ -6161,6 +6700,11 @@ components:
           type: string
           format: date
           nullable: true
+        quantity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
         purchase_price:
           type: string
           format: decimal
@@ -6230,18 +6774,36 @@ components:
         message:
           type: string
         type:
-          type: string
-          maxLength: 50
+          $ref: '#/components/schemas/TypeEnum'
+        channel:
+          allOf:
+          - $ref: '#/components/schemas/ChannelEnum'
+          readOnly: true
         is_read:
           type: boolean
+        sent_email:
+          type: boolean
+          readOnly: true
+        sent_sms:
+          type: boolean
+          readOnly: true
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
         created_at:
           type: string
           format: date-time
           readOnly: true
       required:
+      - channel
       - created_at
       - id
       - message
+      - sent_at
+      - sent_email
+      - sent_sms
       - title
       - user
     NotificationRequest:
@@ -6255,8 +6817,7 @@ components:
           type: string
           minLength: 1
         type:
-          type: string
-          maxLength: 50
+          $ref: '#/components/schemas/TypeEnum'
         is_read:
           type: boolean
       required:
@@ -6795,10 +7356,11 @@ components:
       - email
     PatchedAppointmentRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         appointment_number:
           type: string
-          minLength: 1
           maxLength: 50
         patient:
           type: integer
@@ -6839,10 +7401,11 @@ components:
           type: boolean
     PatchedConsultationRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         consultation_number:
           type: string
-          minLength: 1
           maxLength: 50
         patient:
           type: integer
@@ -6934,10 +7497,11 @@ components:
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
     PatchedInvoiceRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         invoice_number:
           type: string
-          minLength: 1
           maxLength: 50
         patient:
           type: integer
@@ -6948,6 +7512,7 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
         tax:
           type: string
           format: decimal
@@ -6956,10 +7521,11 @@ components:
           $ref: '#/components/schemas/InvoiceStatusEnum'
     PatchedLabRequestRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         request_number:
           type: string
-          minLength: 1
           maxLength: 50
         consultation:
           type: integer
@@ -6998,6 +7564,9 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        service:
+          type: integer
+          nullable: true
         normal_range:
           type: string
         is_active:
@@ -7047,6 +7616,11 @@ components:
           type: string
           format: date
           nullable: true
+        quantity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
         purchase_price:
           type: string
           format: decimal
@@ -7095,16 +7669,16 @@ components:
           type: string
           minLength: 1
         type:
-          type: string
-          maxLength: 50
+          $ref: '#/components/schemas/TypeEnum'
         is_read:
           type: boolean
     PatchedPatientRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         patient_number:
           type: string
-          minLength: 1
           maxLength: 50
         first_name:
           type: string
@@ -7115,13 +7689,10 @@ components:
           minLength: 1
           maxLength: 100
         gender:
-          oneOf:
-          - $ref: '#/components/schemas/PatientGenderEnum'
-          - $ref: '#/components/schemas/BlankEnum'
+          $ref: '#/components/schemas/PatientGenderEnum'
         date_of_birth:
           type: string
           format: date
-          nullable: true
         phone:
           type: string
           maxLength: 30
@@ -7152,10 +7723,11 @@ components:
           $ref: '#/components/schemas/PatientStatusEnum'
     PatchedPaymentRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         payment_number:
           type: string
-          minLength: 1
           maxLength: 50
         invoice:
           type: integer
@@ -7196,10 +7768,11 @@ components:
           type: string
     PatchedPrescriptionRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         prescription_number:
           type: string
-          minLength: 1
           maxLength: 50
         consultation:
           type: integer
@@ -7211,6 +7784,54 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/PrescriptionStatusEnum'
+    PatchedProfileUpdateRequest:
+      type: object
+      description: |-
+        Mise à jour du profil par l'utilisateur lui-même.
+
+        Champs libres : prénom, nom, nom d'utilisateur, e-mail, téléphone, genre, photo.
+        Le rôle et le statut ne sont PAS modifiables ici (réservés à l'admin).
+        Changer l'e-mail est sensible : on exige le mot de passe actuel.
+      properties:
+        username:
+          type: string
+          minLength: 1
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        phone:
+          type: string
+          maxLength: 30
+        gender:
+          oneOf:
+          - $ref: '#/components/schemas/UserGenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        avatar:
+          type: string
+          format: binary
+          nullable: true
+        clear_avatar:
+          type: boolean
+          writeOnly: true
+        current_password:
+          type: string
+          writeOnly: true
+          minLength: 1
     PatchedSpecialtyRequest:
       type: object
       properties:
@@ -7277,6 +7898,8 @@ components:
           $ref: '#/components/schemas/UserStatusEnum'
     Patient:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         id:
           type: integer
@@ -7291,13 +7914,10 @@ components:
           type: string
           maxLength: 100
         gender:
-          oneOf:
-          - $ref: '#/components/schemas/PatientGenderEnum'
-          - $ref: '#/components/schemas/BlankEnum'
+          $ref: '#/components/schemas/PatientGenderEnum'
         date_of_birth:
           type: string
           format: date
-          nullable: true
         phone:
           type: string
           maxLength: 30
@@ -7336,10 +7956,11 @@ components:
           readOnly: true
       required:
       - created_at
+      - date_of_birth
       - first_name
+      - gender
       - id
       - last_name
-      - patient_number
       - updated_at
     PatientBrief:
       type: object
@@ -7390,10 +8011,11 @@ components:
         * `OTHER` - Other
     PatientRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         patient_number:
           type: string
-          minLength: 1
           maxLength: 50
         first_name:
           type: string
@@ -7441,7 +8063,6 @@ components:
       - first_name
       - gender
       - last_name
-      - patient_number
     PatientStatusEnum:
       enum:
       - ACTIVE
@@ -7469,6 +8090,8 @@ components:
       - total
     Payment:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         id:
           type: integer
@@ -7522,6 +8145,7 @@ components:
           nullable: true
         received_by_name:
           type: string
+          nullable: true
           readOnly: true
         notes:
           type: string
@@ -7535,7 +8159,6 @@ components:
       - patient_detail
       - payment_date
       - payment_method
-      - payment_number
       - received_by
       - received_by_name
       - service_detail
@@ -7556,10 +8179,11 @@ components:
         * `INSURANCE` - Insurance
     PaymentRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         payment_number:
           type: string
-          minLength: 1
           maxLength: 50
         invoice:
           type: integer
@@ -7578,7 +8202,6 @@ components:
       - amount
       - invoice
       - payment_method
-      - payment_number
     PaymentStatusEnum:
       enum:
       - PENDING
@@ -7616,6 +8239,8 @@ components:
       - top_consumed
     Prescription:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         id:
           type: integer
@@ -7668,7 +8293,6 @@ components:
       - patient
       - patient_detail
       - prescription_date
-      - prescription_number
       - updated_at
     PrescriptionItem:
       type: object
@@ -7743,10 +8367,11 @@ components:
       - prescription
     PrescriptionRequest:
       type: object
+      description: 'Mixin de serializer : number_field / number_prefix, champ facultatif
+        à la création.'
       properties:
         prescription_number:
           type: string
-          minLength: 1
           maxLength: 50
         consultation:
           type: integer
@@ -7762,7 +8387,6 @@ components:
       - consultation
       - doctor
       - patient
-      - prescription_number
     PrescriptionStatusEnum:
       enum:
       - DRAFT
@@ -7777,6 +8401,24 @@ components:
         * `PARTIALLY_DISPENSED` - Partially dispensed
         * `DISPENSED` - Dispensed
         * `CANCELLED` - Cancelled
+    PresenceResponse:
+      type: object
+      properties:
+        is_online:
+          type: boolean
+      required:
+      - is_online
+    ServerTimeResponse:
+      type: object
+      properties:
+        now:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+      required:
+      - now
+      - timezone
     ServiceBrief:
       type: object
       properties:
@@ -7802,6 +8444,14 @@ components:
       description: |-
         * `MARINE` - Marine
         * `VERT` - Vert
+    SessionCloseRequestRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
     Specialty:
       type: object
       properties:
@@ -7840,6 +8490,9 @@ components:
           readOnly: true
         medication:
           type: integer
+        medication_name:
+          type: string
+          readOnly: true
         batch:
           type: integer
           nullable: true
@@ -7866,6 +8519,7 @@ components:
       required:
       - id
       - medication
+      - medication_name
       - movement_date
       - movement_type
       - performed_by
@@ -7940,6 +8594,22 @@ components:
       required:
       - medication
       - quantity
+    TypeEnum:
+      enum:
+      - LAB_RESULT
+      - LOW_STOCK
+      - APPOINTMENT
+      - PAYMENT
+      - INVOICE
+      - SYSTEM
+      type: string
+      description: |-
+        * `LAB_RESULT` - Résultat d'examen
+        * `LOW_STOCK` - Stock bas
+        * `APPOINTMENT` - Rendez-vous
+        * `PAYMENT` - Paiement
+        * `INVOICE` - Facture
+        * `SYSTEM` - Système
     User:
       type: object
       properties:
@@ -7976,6 +8646,21 @@ components:
           $ref: '#/components/schemas/UserRoleEnum'
         status:
           $ref: '#/components/schemas/UserStatusEnum'
+        is_superuser:
+          type: boolean
+          readOnly: true
+          title: Statut super-utilisateur
+          description: Précise que l’utilisateur possède toutes les permissions sans
+            les assigner explicitement.
+        avatar:
+          type: string
+          nullable: true
+          description: URL de la photo de profil (absolue si possible, sinon relative
+            /media/...).
+          readOnly: true
+        is_online:
+          type: boolean
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -7984,10 +8669,21 @@ components:
           type: string
           format: date-time
           readOnly: true
+        password_changed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: 'Date du dernier changement de mot de passe (limite : 1 fois
+            / 7 jours).'
       required:
+      - avatar
       - created_at
       - email
       - id
+      - is_online
+      - is_superuser
+      - password_changed_at
       - role
       - updated_at
       - username

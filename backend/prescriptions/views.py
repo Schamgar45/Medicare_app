@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
+from users.permissions import is_admin
 from users.roles import DOCTOR, PHARMACIST
 from users.scoping import DoctorScopedMixin
 
@@ -56,8 +57,10 @@ class PrescriptionViewSet(DoctorScopedMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="dispense")
     def dispense(self, request, pk=None):
         prescription = self.get_object()
-        if request.user.role != PHARMACIST:
-            raise PermissionDenied("Seul le pharmacien peut délivrer une ordonnance.")
+        if request.user.role != PHARMACIST and not is_admin(request.user):
+            raise PermissionDenied(
+                "Seul le pharmacien ou l'administrateur peut délivrer une ordonnance."
+            )
 
         target_status = request.data.get("status")
         if target_status not in (

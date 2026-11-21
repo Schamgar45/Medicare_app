@@ -7,6 +7,7 @@ from rest_framework_simplejwt.serializers import (
 )
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.utils import get_md5_hash_password
 from rest_framework import serializers as drf_serializers
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
@@ -342,6 +343,10 @@ class CustomTokenRefreshSerializer(TokenRefreshSerializer):
         user = User.objects.get(pk=token[api_settings.USER_ID_CLAIM])
         if user.status != user.Status.ACTIVE:
             raise drf_serializers.ValidationError("Account is not active.")
+        if token.get(api_settings.REVOKE_TOKEN_CLAIM) != get_md5_hash_password(
+            user.password
+        ):
+            raise drf_serializers.ValidationError("Password changed; log in again.")
         return super().validate(attrs)
 
 

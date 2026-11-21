@@ -6,8 +6,11 @@ from django.db.models import F, Q, Sum
 from django.db.models.deletion import RestrictedError
 from django.db.models.functions import Coalesce
 from django.utils import timezone
+from users.models import User
 
 from users.roles import CASHIER, DOCTOR, PHARMACIST, RECEPTIONIST
+from notifications.models import Notification
+from notifications.service import send_notification
 
 from .models import Medication, MedicationBatch, StockMovement
 from .serializers import (
@@ -15,6 +18,40 @@ from .serializers import (
     MedicationBatchSerializer,
     StockMovementSerializer,
 )
+
+
+def _current_stock(medication_id):
+    return (
+        MedicationBatch.objects.filter(medication_id=medication_id)
+        .filter(
+            Q(expiration_date__isnull=True)
+            | Q(expiration_date__gte=timezone.localdate())
+        )
+        .aggregate(total=Sum("quantity"))["total"]
+        or 0
+    )
+
+
+def _notify_if_stock_became_low(medication, was_low):
+    current_stock = _current_stock(medication.pk)
+    if was_low or current_stock > medication.minimum_stock:
+        return
+
+    users = User.objects.filter(
+        role=PHARMACIST,
+        status=User.Status.ACTIVE,
+    )
+    for user in users:
+        send_notification(
+            user=user,
+            title="Stock bas",
+            message=(
+                f"Le stock de {medication.name} est bas : "
+                f"{current_stock} unité(s) restante(s), "
+                f"seuil minimum {medication.minimum_stock}."
+            ),
+            notif_type=Notification.Type.LOW_STOCK,
+        )
 
 
 class MedicationFilter(django_filters.FilterSet):
@@ -54,6 +91,13 @@ class MedicationViewSet(viewsets.ModelViewSet):
                 0,
             )
         )
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        medication = serializer.instance
+        was_low = _current_stock(medication.pk) <= medication.minimum_stock
+        medication = serializer.save()
+        _notify_if_stock_became_low(medication, was_low)
 
     @transaction.atomic
     def destroy(self, request, *args, **kwargs):
@@ -126,6 +170,65 @@ class MedicationBatchViewSet(viewsets.ModelViewSet):
     ordering_fields = ["id", "expiration_date", "quantity"]
     ordering = ["expiration_date"]
 
+    @transaction.atomic
+    def perform_create(self, serializer):
+        medication = serializer.validated_data["medication"]
+        was_low = _current_stock(medication.pk) <= medication.minimum_stock
+        batch = serializer.save()
+        if batch.quantity:
+            StockMovement.objects.create(
+                medication=batch.medication,
+                batch=batch,
+                movement_type=StockMovement.MovementType.IN,
+                quantity=batch.quantity,
+                reason="Stock initial du lot",
+                performed_by=self.request.user,
+            )
+        _notify_if_stock_became_low(batch.medication, was_low)
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        batch = type(serializer.instance).objects.select_for_update().get(
+            pk=serializer.instance.pk
+        )
+        next_medication = serializer.validated_data.get("medication", batch.medication)
+        if next_medication.pk != batch.medication_id and (
+            batch.quantity or batch.stock_movements.exists()
+        ):
+            raise serializers.ValidationError(
+                "Un lot avec du stock ou un historique ne peut pas changer de médicament."
+            )
+        previous_quantity = batch.quantity
+        was_low = (
+            _current_stock(next_medication.pk) <= next_medication.minimum_stock
+        )
+        serializer.instance = batch
+        batch = serializer.save()
+        difference = batch.quantity - previous_quantity
+        if difference:
+            StockMovement.objects.create(
+                medication=batch.medication,
+                batch=batch,
+                movement_type=(
+                    StockMovement.MovementType.IN
+                    if difference > 0
+                    else StockMovement.MovementType.OUT
+                ),
+                quantity=abs(difference),
+                reason="Ajustement manuel du lot",
+                performed_by=self.request.user,
+            )
+        _notify_if_stock_became_low(batch.medication, was_low)
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        batch = type(instance).objects.select_for_update().get(pk=instance.pk)
+        if batch.quantity or batch.stock_movements.exists():
+            raise serializers.ValidationError(
+                "Impossible de supprimer un lot avec du stock ou des mouvements."
+            )
+        batch.delete()
+
 
 class StockMovementViewSet(viewsets.ModelViewSet):
 
@@ -157,17 +260,19 @@ class StockMovementViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_create(self, serializer):
+        medication = serializer.validated_data["medication"]
+        was_low = _current_stock(medication.pk) <= medication.minimum_stock
         movement = serializer.save(performed_by=self.request.user)
-        if movement.batch_id:
-            delta = movement.quantity
-            if movement.movement_type in ("OUT", "EXPIRED", "DAMAGED"):
-                delta = -delta
-            batch = (
-                type(movement.batch)
-                .objects.select_for_update()
-                .get(pk=movement.batch_id)
-            )
-            if batch.quantity + delta < 0:
-                raise serializers.ValidationError("Insufficient batch stock.")
-            batch.quantity = F("quantity") + delta
-            batch.save(update_fields=["quantity"])
+        batch = (
+            type(movement.batch)
+            .objects.select_for_update()
+            .get(pk=movement.batch_id)
+        )
+        delta = movement.quantity
+        if movement.movement_type in ("OUT", "EXPIRED", "DAMAGED"):
+            delta = -delta
+        if batch.quantity + delta < 0:
+            raise serializers.ValidationError("Insufficient batch stock.")
+        batch.quantity = F("quantity") + delta
+        batch.save(update_fields=["quantity"])
+        _notify_if_stock_became_low(movement.medication, was_low)
