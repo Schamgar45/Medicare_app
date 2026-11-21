@@ -62,6 +62,16 @@ RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "").strip()
 if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+# Vercel change de domaine à chaque déploiement. Ces variables système sont
+# fournies automatiquement et évitent un DisallowedHost sur les URLs de preview.
+VERCEL_URL = os.getenv("VERCEL_URL", "").strip()
+VERCEL_PROJECT_PRODUCTION_URL = os.getenv(
+    "VERCEL_PROJECT_PRODUCTION_URL", ""
+).strip()
+for vercel_host in (VERCEL_URL, VERCEL_PROJECT_PRODUCTION_URL):
+    if vercel_host and vercel_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(vercel_host)
+
 # Les valeurs sûres sont activées automatiquement hors développement et restent
 # configurables pour les déploiements derrière un reverse proxy TLS.
 SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", not DEBUG)
@@ -77,7 +87,12 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 
 if not DEBUG:
-    if not os.getenv("DJANGO_ALLOWED_HOSTS", "").strip() and not RENDER_EXTERNAL_HOSTNAME:
+    if (
+        not os.getenv("DJANGO_ALLOWED_HOSTS", "").strip()
+        and not RENDER_EXTERNAL_HOSTNAME
+        and not VERCEL_URL
+        and not VERCEL_PROJECT_PRODUCTION_URL
+    ):
         raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must list the production hostnames.")
     if not env_bool("USE_POSTGRES", False) and not os.getenv("DATABASE_URL", "").strip():
         raise ImproperlyConfigured(

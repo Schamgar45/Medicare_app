@@ -8,7 +8,7 @@ Le dépôt contient deux applications et se déploie en deux projets Vercel reli
 - Framework : Vite
 - Build : `npm run build`
 - Output : `dist`
-- Variable de production `VITE_API_URL` : URL publique du projet backend, sans slash final, par exemple `https://<api>.vercel.app`.
+- Variable de production `VITE_API_URL` : URL publique **stable** du projet backend, sans slash final, par exemple `https://medicare-backend.vercel.app`. Ne pas utiliser une URL de déploiement contenant un hash (`...-2rhbtemp3-....vercel.app`) : elle change à chaque déploiement.
 
 Après toute modification de cette variable, redéployer le frontend.
 
@@ -22,7 +22,7 @@ Après toute modification de cette variable, redéployer le frontend.
 |---|---|
 | `DJANGO_DEBUG` | `false` |
 | `DJANGO_SECRET_KEY` | clé aléatoire de production, au moins 50 caractères |
-| `DJANGO_ALLOWED_HOSTS` | domaine Vercel du backend, sans `https://` |
+| `DJANGO_ALLOWED_HOSTS` | domaine Vercel stable du backend, sans `https://`; les domaines de déploiement/preview sont ajoutés automatiquement via `VERCEL_URL` |
 | `DATABASE_URL` | URI PostgreSQL de Supabase; saisir dans le tableau de bord Vercel, jamais dans Git |
 | `CORS_ALLOWED_ORIGINS` | URL HTTPS exacte du frontend Vercel |
 | `EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` |
